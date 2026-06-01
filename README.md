@@ -60,6 +60,18 @@ Then in Chrome:
 
 ## Develop
 
+**For Safari (after first-time setup):**
+
+```bash
+npm run build
+```
+
+Then in Xcode, hit ▶ Run. The Xcode project references built files in `.output/chrome-mv3/` directly, so `npm run build` is enough — no need to re-run `safari:wrap` (which would wipe your signing settings).
+
+⚠️ Only re-run `npm run safari:wrap` if you need to regenerate the Xcode project from scratch (e.g., manifest.json schema change). You'll have to re-set your signing team afterward.
+
+**For Chrome (faster iteration):**
+
 ```bash
 npm run dev
 ```

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ytblocker — Settings</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>ytblocker</h1>
+        <p class="subtitle">
+          Block YouTube Shorts and (soon) non-educational videos.
+        </p>
+      </header>
+
+      <section class="card">
+        <label class="row">
+          <span>
+            <strong>Extension enabled</strong>
+            <small>Master switch. When off, the extension does nothing.</small>
+          </span>
+          <input type="checkbox" id="enabled" />
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>Shorts</h2>
+        <label class="row">
+          <span>
+            <strong>Hide Shorts everywhere</strong>
+            <small>
+              Hides the Shorts tab in the left nav, Shorts shelves on the
+              homepage, search results, and watch-page sidebar. Redirects
+              <code>/shorts/*</code> URLs back to the homepage.
+            </small>
+          </span>
+          <input type="checkbox" id="shorts-enabled" />
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>Feed filter <span class="badge">preview</span></h2>
+        <p class="hint">
+          Coming next: hide channels not on your allowlist from the YouTube
+          feed.
+        </p>
+        <label class="row disabled-row">
+          <span>
+            <strong>Hide non-allowlisted channels</strong>
+            <small>Not implemented yet — settings here are saved for later.</small>
+          </span>
+          <input type="checkbox" id="feed-enabled" disabled />
+        </label>
+        <details>
+          <summary>Allowlist (one channel handle per line)</summary>
+          <textarea
+            id="allowlist"
+            rows="8"
+            placeholder="@3blue1brown&#10;@khanacademy&#10;@veritasium"
+          ></textarea>
+        </details>
+        <details>
+          <summary>Blocklist</summary>
+          <textarea
+            id="blocklist"
+            rows="4"
+            placeholder="@channel-i-never-want-to-see"
+          ></textarea>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2>Claude classifier <span class="badge">preview</span></h2>
+        <p class="hint">
+          Optional: paste your own Claude API key to classify unknown channels
+          later. Every call goes from your browser directly to
+          <code>api.anthropic.com</code> — never through anyone else's server.
+        </p>
+        <label class="row disabled-row">
+          <span>
+            <strong>Use Claude for unknown channels</strong>
+            <small>Not implemented yet.</small>
+          </span>
+          <input type="checkbox" id="claude-enabled" disabled />
+        </label>
+        <label class="field">
+          <span>Claude API key</span>
+          <div class="key-row">
+            <input
+              type="password"
+              id="claude-key"
+              placeholder="sk-ant-..."
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="button" id="test-key">Test</button>
+          </div>
+          <small id="key-status"></small>
+        </label>
+        <label class="field">
+          <span>Strictness (used by classifier)</span>
+          <select id="strictness">
+            <option value="lenient">Lenient — more videos pass</option>
+            <option value="moderate">Moderate</option>
+            <option value="strict">Strict — fewer videos pass</option>
+          </select>
+        </label>
+      </section>
+
+      <footer>
+        <small>
+          Settings save automatically. <span id="save-indicator"></span>
+        </small>
+      </footer>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
