@@ -19,11 +19,34 @@ Open-source browser extension that blocks YouTube Shorts and (eventually) non-ed
 - Toolbar popup ("allow this channel" one-click action)
 - Safari + Firefox builds
 
-## Install (Chrome / Brave / Edge — dev mode)
+## Install — Safari (primary target)
+
+**Prereqs:** macOS 14+, full Xcode installed (not just Command Line Tools), free Apple ID.
 
 ```bash
 git clone <this-repo>
 cd ytblocker
+npm install
+npm run safari:wrap     # builds, then runs safari-web-extension-converter
+npm run safari:open     # opens the generated Xcode project
+```
+
+In Xcode:
+
+1. Hit **Run** (⌘R). A small host app called "ytblocker" launches with a button telling you to enable the extension in Safari.
+2. Quit the host app.
+3. In Safari: **Settings → Extensions** → flip on **ytblocker**.
+4. One-time: **Safari → Develop menu → Allow Unsigned Extensions** (this menu appears once you enable Settings → Advanced → "Show features for web developers").
+
+Visit `youtube.com` — Shorts are gone. Visit `youtube.com/shorts/<anything>` — you'll be redirected home.
+
+> ⚠️ Safari resets "Allow Unsigned Extensions" each time you quit Safari. You'll need to re-enable it after every Safari restart, or enroll in the paid Apple Developer Program ($99/yr) and sign the app.
+
+## Install — Chrome / Brave / Edge (faster dev loop)
+
+Same code, different wrapper. If you're iterating, this is 30 seconds vs. Safari's 5 minutes.
+
+```bash
 npm install
 npm run build
 ```
@@ -34,8 +57,6 @@ Then in Chrome:
 2. Enable **Developer mode** (top-right toggle)
 3. Click **Load unpacked**
 4. Pick the `.output/chrome-mv3/` folder
-
-Visit `youtube.com` — Shorts are gone. Visit `youtube.com/shorts/<anything>` — you'll be redirected home.
 
 ## Develop
 

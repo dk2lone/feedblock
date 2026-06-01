@@ -12,7 +12,9 @@
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "safari:wrap": "npm run build && xcrun safari-web-extension-converter .output/chrome-mv3 --project-location safari --app-name ytblocker --bundle-identifier com.dk2lone.ytblocker --macos-only --no-prompt --no-open --force",
+    "safari:open": "open safari/ytblocker/ytblocker.xcodeproj"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.270",
