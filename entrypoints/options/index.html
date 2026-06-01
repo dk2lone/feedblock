@@ -70,21 +70,43 @@
         </div>
 
         <ul id="channel-list" class="channel-list"></ul>
+
+        <div class="field">
+          <span>Blocklist — always hide these channels</span>
+          <div class="key-row">
+            <input
+              type="text"
+              id="block-input"
+              placeholder="@mrbeast"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="button" id="block-add">Add</button>
+          </div>
+          <small id="block-status"></small>
+        </div>
+
+        <ul id="block-list" class="channel-list"></ul>
       </section>
 
       <section class="card">
-        <h2>Claude classifier <span class="badge">preview</span></h2>
+        <h2>Claude classifier</h2>
         <p class="hint">
-          Optional: paste your own Claude API key to classify unknown channels
-          later. Every call goes from your browser directly to
+          For videos not on either list above, ask Claude whether each one is
+          educational. Each call goes from your browser directly to
           <code>api.anthropic.com</code> — never through anyone else's server.
+          Verdicts are cached per video, so cost is bounded.
         </p>
-        <label class="row disabled-row">
+        <label class="row">
           <span>
             <strong>Use Claude for unknown channels</strong>
-            <small>Not implemented yet.</small>
+            <small>
+              Required: paste an API key below and click Test. Tiles render with
+              a "checking…" badge while Claude classifies them, then hide if
+              blocked.
+            </small>
           </span>
-          <input type="checkbox" id="claude-enabled" disabled />
+          <input type="checkbox" id="claude-enabled" />
         </label>
         <label class="field">
           <span>Claude API key</span>
@@ -99,14 +121,6 @@
             <button type="button" id="test-key">Test</button>
           </div>
           <small id="key-status"></small>
-        </label>
-        <label class="field">
-          <span>Strictness (used by classifier)</span>
-          <select id="strictness">
-            <option value="lenient">Lenient — more videos pass</option>
-            <option value="moderate">Moderate</option>
-            <option value="strict">Strict — fewer videos pass</option>
-          </select>
         </label>
       </section>
 

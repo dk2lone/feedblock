@@ -7,13 +7,14 @@ import {
 
 const KEY = 'settings';
 
-type RawAllowlist = AllowlistChannel[] | string[] | undefined;
+type RawChannelList = AllowlistChannel[] | string[] | undefined;
 
 type PartialSettings = {
   enabled?: boolean;
   shorts?: Partial<Settings['shorts']>;
-  feedFilter?: Omit<Partial<Settings['feedFilter']>, 'allowlist'> & {
-    allowlist?: RawAllowlist;
+  feedFilter?: Omit<Partial<Settings['feedFilter']>, 'allowlist' | 'blocklist'> & {
+    allowlist?: RawChannelList;
+    blocklist?: RawChannelList;
   };
   claude?: Partial<Settings['claude']>;
 };
@@ -47,8 +48,8 @@ function merge(defaults: Settings, partial: PartialSettings): Settings {
     shorts: { ...defaults.shorts, ...partial.shorts },
     feedFilter: {
       enabled: partial.feedFilter?.enabled ?? defaults.feedFilter.enabled,
-      allowlist: normalizeAllowlist(partial.feedFilter?.allowlist),
-      blocklist: partial.feedFilter?.blocklist ?? defaults.feedFilter.blocklist,
+      allowlist: normalizeChannelList(partial.feedFilter?.allowlist),
+      blocklist: normalizeChannelList(partial.feedFilter?.blocklist),
       strictness:
         partial.feedFilter?.strictness ?? defaults.feedFilter.strictness,
     },
@@ -56,7 +57,7 @@ function merge(defaults: Settings, partial: PartialSettings): Settings {
   };
 }
 
-function normalizeAllowlist(raw: RawAllowlist): AllowlistChannel[] {
+function normalizeChannelList(raw: RawChannelList): AllowlistChannel[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((entry) => {

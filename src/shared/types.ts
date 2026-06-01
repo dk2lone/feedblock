@@ -15,7 +15,7 @@ export interface Settings {
   feedFilter: {
     enabled: boolean;
     allowlist: AllowlistChannel[];
-    blocklist: string[];
+    blocklist: AllowlistChannel[];
     strictness: Strictness;
   };
   claude: {

@@ -3,12 +3,28 @@ import {
   DEFAULT_SETTINGS,
   type AllowlistChannel,
   type Settings,
-  type Strictness,
 } from '@/src/shared/types';
 import {
   normalizeHandle,
   resolveHandle,
 } from '@/src/sites/youtube/channelResolver';
+
+type Kind = 'allow' | 'block';
+
+const IDS: Record<Kind, { input: string; button: string; status: string; list: string }> = {
+  allow: {
+    input: 'channel-input',
+    button: 'channel-add',
+    status: 'channel-status',
+    list: 'channel-list',
+  },
+  block: {
+    input: 'block-input',
+    button: 'block-add',
+    status: 'block-status',
+    list: 'block-list',
+  },
+};
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -30,18 +46,22 @@ function render(): void {
   $<HTMLInputElement>('feed-enabled').checked = current.feedFilter.enabled;
   $<HTMLInputElement>('claude-enabled').checked = current.claude.enabled;
   $<HTMLInputElement>('claude-key').value = current.claude.apiKey;
-  $<HTMLSelectElement>('strictness').value = current.feedFilter.strictness;
-  renderChannelList();
+  renderList('allow');
+  renderList('block');
 }
 
-function renderChannelList(): void {
-  const list = $<HTMLUListElement>('channel-list');
-  list.replaceChildren(
-    ...current.feedFilter.allowlist.map(channelRow),
-  );
+function listFor(kind: Kind): AllowlistChannel[] {
+  return kind === 'allow'
+    ? current.feedFilter.allowlist
+    : current.feedFilter.blocklist;
 }
 
-function channelRow(channel: AllowlistChannel): HTMLLIElement {
+function renderList(kind: Kind): void {
+  const list = $<HTMLUListElement>(IDS[kind].list);
+  list.replaceChildren(...listFor(kind).map((c) => channelRow(kind, c)));
+}
+
+function channelRow(kind: Kind, channel: AllowlistChannel): HTMLLIElement {
   const li = document.createElement('li');
 
   const info = document.createElement('div');
@@ -56,25 +76,28 @@ function channelRow(channel: AllowlistChannel): HTMLLIElement {
   const remove = document.createElement('button');
   remove.type = 'button';
   remove.textContent = 'Remove';
-  remove.addEventListener('click', () => void removeChannel(channel.handle));
+  remove.addEventListener('click', () => void removeChannel(kind, channel.handle));
 
   li.append(info, remove);
   return li;
 }
 
 function wire(): void {
-  const immediate = ['enabled', 'shorts-enabled', 'feed-enabled', 'claude-enabled', 'strictness'];
+  const immediate = ['enabled', 'shorts-enabled', 'feed-enabled', 'claude-enabled'];
   immediate.forEach((id) => $(id).addEventListener('change', save));
 
   $('claude-key').addEventListener('input', debouncedSave);
   $('test-key').addEventListener('click', testKey);
-  $('channel-add').addEventListener('click', () => void addChannel());
-  $<HTMLInputElement>('channel-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      void addChannel();
-    }
-  });
+
+  for (const kind of ['allow', 'block'] as Kind[]) {
+    $(IDS[kind].button).addEventListener('click', () => void addChannel(kind));
+    $<HTMLInputElement>(IDS[kind].input).addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        void addChannel(kind);
+      }
+    });
+  }
 }
 
 async function save(): Promise<void> {
@@ -85,7 +108,7 @@ async function save(): Promise<void> {
       enabled: $<HTMLInputElement>('feed-enabled').checked,
       allowlist: current.feedFilter.allowlist,
       blocklist: current.feedFilter.blocklist,
-      strictness: $<HTMLSelectElement>('strictness').value as Strictness,
+      strictness: current.feedFilter.strictness,
     },
     claude: {
       enabled: $<HTMLInputElement>('claude-enabled').checked,
@@ -98,10 +121,10 @@ async function save(): Promise<void> {
 
 const debouncedSave = debounce(save, 400);
 
-async function addChannel(): Promise<void> {
-  const input = $<HTMLInputElement>('channel-input');
-  const button = $<HTMLButtonElement>('channel-add');
-  const status = $<HTMLElement>('channel-status');
+async function addChannel(kind: Kind): Promise<void> {
+  const input = $<HTMLInputElement>(IDS[kind].input);
+  const button = $<HTMLButtonElement>(IDS[kind].button);
+  const status = $<HTMLElement>(IDS[kind].status);
 
   const raw = input.value;
   const handle = normalizeHandle(raw);
@@ -109,7 +132,7 @@ async function addChannel(): Promise<void> {
     setStatus(status, 'error', 'Enter a handle like @khanacademy');
     return;
   }
-  if (current.feedFilter.allowlist.some((c) => c.handle === handle)) {
+  if (listFor(kind).some((c) => c.handle === handle)) {
     setStatus(status, 'error', `@${handle} is already on the list`);
     return;
   }
@@ -123,36 +146,38 @@ async function addChannel(): Promise<void> {
     setStatus(status, 'error', reasonText(result.reason));
     return;
   }
-  if (current.feedFilter.allowlist.some((c) => c.id === result.channel.id)) {
+  if (listFor(kind).some((c) => c.id === result.channel.id)) {
     setStatus(status, 'error', `${result.channel.displayName} is already on the list`);
     return;
   }
 
-  current = {
-    ...current,
-    feedFilter: {
-      ...current.feedFilter,
-      allowlist: [...current.feedFilter.allowlist, result.channel],
-    },
-  };
+  const updated = [...listFor(kind), result.channel];
+  current = updateList(current, kind, updated);
   await setSettings(current);
   input.value = '';
   setStatus(status, 'ok', `Added ${result.channel.displayName}`);
-  renderChannelList();
+  renderList(kind);
 }
 
-async function removeChannel(handle: string): Promise<void> {
-  current = {
-    ...current,
+async function removeChannel(kind: Kind, handle: string): Promise<void> {
+  const updated = listFor(kind).filter((c) => c.handle !== handle);
+  current = updateList(current, kind, updated);
+  await setSettings(current);
+  renderList(kind);
+}
+
+function updateList(
+  settings: Settings,
+  kind: Kind,
+  next: AllowlistChannel[],
+): Settings {
+  return {
+    ...settings,
     feedFilter: {
-      ...current.feedFilter,
-      allowlist: current.feedFilter.allowlist.filter(
-        (c) => c.handle !== handle,
-      ),
+      ...settings.feedFilter,
+      ...(kind === 'allow' ? { allowlist: next } : { blocklist: next }),
     },
   };
-  await setSettings(current);
-  renderChannelList();
 }
 
 function reasonText(reason: 'invalid-input' | 'not-found' | 'network' | 'parse'): string {

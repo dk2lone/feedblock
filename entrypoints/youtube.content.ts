@@ -32,7 +32,11 @@ function apply(settings: Settings): void {
   }
 
   if (settings.enabled && settings.feedFilter.enabled) {
-    installFeedFilter(settings.feedFilter.allowlist);
+    installFeedFilter(
+      settings.feedFilter.allowlist,
+      settings.feedFilter.blocklist,
+      settings.claude.enabled && settings.claude.apiKey.length > 0,
+    );
   } else {
     uninstallFeedFilter();
   }
