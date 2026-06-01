@@ -4,6 +4,10 @@ import {
   installShortsBlocker,
   uninstallShortsBlocker,
 } from '@/src/sites/youtube/shorts';
+import {
+  installFeedFilter,
+  uninstallFeedFilter,
+} from '@/src/sites/youtube/feedFilter';
 import type { Settings } from '@/src/shared/types';
 
 export default defineContentScript({
@@ -25,5 +29,11 @@ function apply(settings: Settings): void {
     installShortsBlocker();
   } else {
     uninstallShortsBlocker();
+  }
+
+  if (settings.enabled && settings.feedFilter.enabled) {
+    installFeedFilter(settings.feedFilter.allowlist);
+  } else {
+    uninstallFeedFilter();
   }
 }

@@ -235,3 +235,68 @@ code {
   padding: 1px 5px;
   border-radius: 3px;
 }
+
+.channel-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.channel-list:empty::before {
+  content: "No channels yet. Add one above.";
+  display: block;
+  padding: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.channel-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.channel-list li:last-child {
+  border-bottom: none;
+}
+
+.channel-list .name {
+  font-weight: 600;
+}
+
+.channel-list .handle {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.channel-list button {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.channel-list button:hover {
+  color: var(--error);
+  border-color: var(--error);
+  filter: none;
+}
+
+#channel-status.ok {
+  color: var(--ok);
+}
+
+#channel-status.error {
+  color: var(--error);
+}

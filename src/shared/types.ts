@@ -1,5 +1,12 @@
 export type Strictness = 'lenient' | 'moderate' | 'strict';
 
+export interface AllowlistChannel {
+  id: string;
+  handle: string;
+  displayName: string;
+  addedAt: number;
+}
+
 export interface Settings {
   enabled: boolean;
   shorts: {
@@ -7,7 +14,7 @@ export interface Settings {
   };
   feedFilter: {
     enabled: boolean;
-    allowlist: string[];
+    allowlist: AllowlistChannel[];
     blocklist: string[];
     strictness: Strictness;
   };

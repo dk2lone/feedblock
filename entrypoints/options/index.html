@@ -41,34 +41,35 @@
       </section>
 
       <section class="card">
-        <h2>Feed filter <span class="badge">preview</span></h2>
-        <p class="hint">
-          Coming next: hide channels not on your allowlist from the YouTube
-          feed.
-        </p>
-        <label class="row disabled-row">
+        <h2>Feed filter</h2>
+        <label class="row">
           <span>
             <strong>Hide non-allowlisted channels</strong>
-            <small>Not implemented yet — settings here are saved for later.</small>
+            <small>
+              Hides any video on your home feed and watch-page Up Next panel
+              whose channel isn't on the allowlist below. If the allowlist is
+              empty, everything is hidden.
+            </small>
           </span>
-          <input type="checkbox" id="feed-enabled" disabled />
+          <input type="checkbox" id="feed-enabled" />
         </label>
-        <details>
-          <summary>Allowlist (one channel handle per line)</summary>
-          <textarea
-            id="allowlist"
-            rows="8"
-            placeholder="@3blue1brown&#10;@khanacademy&#10;@veritasium"
-          ></textarea>
-        </details>
-        <details>
-          <summary>Blocklist</summary>
-          <textarea
-            id="blocklist"
-            rows="4"
-            placeholder="@channel-i-never-want-to-see"
-          ></textarea>
-        </details>
+
+        <div class="field">
+          <span>Add channel</span>
+          <div class="key-row">
+            <input
+              type="text"
+              id="channel-input"
+              placeholder="@khanacademy or youtube.com/@khanacademy"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="button" id="channel-add">Add</button>
+          </div>
+          <small id="channel-status"></small>
+        </div>
+
+        <ul id="channel-list" class="channel-list"></ul>
       </section>
 
       <section class="card">

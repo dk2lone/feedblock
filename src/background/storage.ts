@@ -1,10 +1,21 @@
 import { browser } from 'wxt/browser';
-import { DEFAULT_SETTINGS, type Settings } from '@/src/shared/types';
+import {
+  DEFAULT_SETTINGS,
+  type AllowlistChannel,
+  type Settings,
+} from '@/src/shared/types';
 
 const KEY = 'settings';
 
+type RawAllowlist = AllowlistChannel[] | string[] | undefined;
+
 type PartialSettings = {
-  [K in keyof Settings]?: Partial<Settings[K]>;
+  enabled?: boolean;
+  shorts?: Partial<Settings['shorts']>;
+  feedFilter?: Omit<Partial<Settings['feedFilter']>, 'allowlist'> & {
+    allowlist?: RawAllowlist;
+  };
+  claude?: Partial<Settings['claude']>;
 };
 
 export async function getSettings(): Promise<Settings> {
@@ -34,7 +45,36 @@ function merge(defaults: Settings, partial: PartialSettings): Settings {
   return {
     enabled: partial.enabled ?? defaults.enabled,
     shorts: { ...defaults.shorts, ...partial.shorts },
-    feedFilter: { ...defaults.feedFilter, ...partial.feedFilter },
+    feedFilter: {
+      enabled: partial.feedFilter?.enabled ?? defaults.feedFilter.enabled,
+      allowlist: normalizeAllowlist(partial.feedFilter?.allowlist),
+      blocklist: partial.feedFilter?.blocklist ?? defaults.feedFilter.blocklist,
+      strictness:
+        partial.feedFilter?.strictness ?? defaults.feedFilter.strictness,
+    },
     claude: { ...defaults.claude, ...partial.claude },
   };
+}
+
+function normalizeAllowlist(raw: RawAllowlist): AllowlistChannel[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        const handle = entry.replace(/^@/, '').toLowerCase().trim();
+        if (!handle) return null;
+        return { id: '', handle, displayName: entry, addedAt: 0 };
+      }
+      if (entry && typeof entry === 'object' && typeof entry.handle === 'string') {
+        return {
+          id: typeof entry.id === 'string' ? entry.id : '',
+          handle: entry.handle.toLowerCase(),
+          displayName:
+            typeof entry.displayName === 'string' ? entry.displayName : entry.handle,
+          addedAt: typeof entry.addedAt === 'number' ? entry.addedAt : 0,
+        };
+      }
+      return null;
+    })
+    .filter((c): c is AllowlistChannel => c !== null);
 }
