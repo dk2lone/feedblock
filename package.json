@@ -1,0 +1,22 @@
+{
+  "name": "ytblocker",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Open-source browser extension that blocks YouTube Shorts and non-educational videos. Local-first, BYO Claude API key.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "compile": "tsc --noEmit",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.270",
+    "typescript": "^5.6.0",
+    "wxt": "^0.20.0"
+  }
+}
