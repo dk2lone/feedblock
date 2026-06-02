@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ytblocker</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <strong>ytblocker</strong>
+      <button type="button" id="open-options" class="link">Settings →</button>
+    </header>
+
+    <section class="toggles">
+      <label class="toggle">
+        <span>Extension on</span>
+        <input type="checkbox" id="enabled" />
+      </label>
+      <label class="toggle">
+        <span>Filter feed</span>
+        <input type="checkbox" id="feed-enabled" />
+      </label>
+      <label class="toggle">
+        <span>Use Claude</span>
+        <input type="checkbox" id="claude-enabled" />
+      </label>
+    </section>
+
+    <section class="channel">
+      <h2>This channel</h2>
+      <div id="channel-empty" class="empty">
+        Open a video or channel page on YouTube to add it to a list.
+      </div>
+      <div id="channel-detail" hidden>
+        <div class="name" id="channel-name"></div>
+        <div class="handle" id="channel-handle"></div>
+        <div class="actions">
+          <button type="button" id="add-allow">Allow</button>
+          <button type="button" id="add-block">Block</button>
+        </div>
+        <small id="channel-status"></small>
+      </div>
+    </section>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
