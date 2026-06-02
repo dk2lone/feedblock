@@ -9,6 +9,10 @@ import {
   installFeedFilter,
   uninstallFeedFilter,
 } from '@/src/sites/youtube/feedFilter';
+import {
+  installSearchHistoryHider,
+  uninstallSearchHistoryHider,
+} from '@/src/sites/youtube/searchHistory';
 import type { Settings } from '@/src/shared/types';
 
 export interface DetectedChannel {
@@ -25,6 +29,7 @@ export default defineContentScript({
     // (extension on, Shorts blocker on). We undo this below if settings say
     // otherwise — slight flash of "no Shorts" is preferable to a flash of Shorts.
     installShortsBlocker();
+    installSearchHistoryHider();
 
     apply(await getSettings());
     onSettingsChanged(apply);
@@ -45,6 +50,12 @@ function apply(settings: Settings): void {
     installShortsBlocker();
   } else {
     uninstallShortsBlocker();
+  }
+
+  if (settings.enabled) {
+    installSearchHistoryHider();
+  } else {
+    uninstallSearchHistoryHider();
   }
 
   if (settings.enabled && settings.feedFilter.enabled) {
