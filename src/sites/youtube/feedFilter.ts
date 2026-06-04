@@ -259,12 +259,13 @@ function applyTile(tile: HTMLElement): void {
         localVerdicts.set(video.id, v);
       }
       tile.classList.remove(CHECK_CLASS);
-      if (v === 'block') {
-        tile.classList.add(HIDE_CLASS);
-      } else {
-        // 'pass' or 'error' — leave the tile visible. Errors aren't cached,
-        // so a transient API hiccup will get retried on the next scan.
+      // Strict default: only 'pass' shows. 'block' and 'error' both hide so
+      // missing/invalid API keys and transient API failures don't leak
+      // entertainment. Errors aren't cached, so the next page load retries.
+      if (v === 'pass') {
         tile.classList.remove(HIDE_CLASS);
+      } else {
+        tile.classList.add(HIDE_CLASS);
       }
     });
 }
