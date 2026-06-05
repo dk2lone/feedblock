@@ -42,7 +42,7 @@ async function init(): Promise<void> {
 
 function render(): void {
   $<HTMLInputElement>('enabled').checked = current.enabled;
-  $<HTMLInputElement>('shorts-enabled').checked = current.shorts.enabled;
+  $<HTMLInputElement>('shorts-enabled').checked = current.shortFormVideo.enabled;
   $<HTMLInputElement>('feed-enabled').checked = current.feedFilter.enabled;
   $<HTMLInputElement>('claude-enabled').checked = current.claude.enabled;
   $<HTMLInputElement>('claude-key').value = current.claude.apiKey;
@@ -103,7 +103,7 @@ function wire(): void {
 async function save(): Promise<void> {
   current = {
     enabled: $<HTMLInputElement>('enabled').checked,
-    shorts: { enabled: $<HTMLInputElement>('shorts-enabled').checked },
+    shortFormVideo: { enabled: $<HTMLInputElement>('shorts-enabled').checked },
     feedFilter: {
       enabled: $<HTMLInputElement>('feed-enabled').checked,
       allowlist: current.feedFilter.allowlist,

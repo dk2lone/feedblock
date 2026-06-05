@@ -3,15 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ytblocker — Settings</title>
+    <title>feedblock — Settings</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <main>
       <header>
-        <h1>ytblocker</h1>
+        <h1>feedblock</h1>
         <p class="subtitle">
-          Block YouTube Shorts and (soon) non-educational videos.
+          Blank the YouTube and Instagram feeds — Shorts, Reels, Explore, and
+          (soon) non-educational videos.
         </p>
       </header>
 
@@ -26,14 +27,18 @@
       </section>
 
       <section class="card">
-        <h2>Shorts</h2>
+        <h2>Short-form video & feeds</h2>
         <label class="row">
           <span>
-            <strong>Hide Shorts everywhere</strong>
+            <strong>Blank YouTube Shorts and the Instagram feed</strong>
             <small>
-              Hides the Shorts tab in the left nav, Shorts shelves on the
-              homepage, search results, and watch-page sidebar. Redirects
-              <code>/shorts/*</code> URLs back to the homepage.
+              <strong>YouTube:</strong> hides the Shorts tab, Shorts shelves on
+              the homepage, search results, and watch-page sidebar; redirects
+              <code>/shorts/*</code> back to the homepage.<br />
+              <strong>Instagram:</strong> blanks the home feed
+              (<code>/</code>), Explore (<code>/explore/*</code>), and Reels
+              (<code>/reels</code>, <code>/reel/*</code>). DMs, profiles,
+              individual posts, and search still work.
             </small>
           </span>
           <input type="checkbox" id="shorts-enabled" />

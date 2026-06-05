@@ -46,7 +46,7 @@ export default defineContentScript({
 });
 
 function apply(settings: Settings): void {
-  if (settings.enabled && settings.shorts.enabled) {
+  if (settings.enabled && settings.shortFormVideo.enabled) {
     installShortsBlocker();
   } else {
     uninstallShortsBlocker();

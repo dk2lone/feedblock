@@ -9,7 +9,7 @@ export interface AllowlistChannel {
 
 export interface Settings {
   enabled: boolean;
-  shorts: {
+  shortFormVideo: {
     enabled: boolean;
   };
   feedFilter: {
@@ -26,7 +26,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
-  shorts: { enabled: true },
+  shortFormVideo: { enabled: true },
   feedFilter: {
     enabled: false,
     allowlist: [],

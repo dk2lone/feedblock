@@ -11,7 +11,9 @@ type RawChannelList = AllowlistChannel[] | string[] | undefined;
 
 type PartialSettings = {
   enabled?: boolean;
-  shorts?: Partial<Settings['shorts']>;
+  shortFormVideo?: Partial<Settings['shortFormVideo']>;
+  // Legacy: pre-Instagram-Reels schema used `shorts`. Read it on load only.
+  shorts?: Partial<Settings['shortFormVideo']>;
   feedFilter?: Omit<Partial<Settings['feedFilter']>, 'allowlist' | 'blocklist'> & {
     allowlist?: RawChannelList;
     blocklist?: RawChannelList;
@@ -45,7 +47,11 @@ export function onSettingsChanged(
 function merge(defaults: Settings, partial: PartialSettings): Settings {
   return {
     enabled: partial.enabled ?? defaults.enabled,
-    shorts: { ...defaults.shorts, ...partial.shorts },
+    shortFormVideo: {
+      ...defaults.shortFormVideo,
+      ...partial.shorts,
+      ...partial.shortFormVideo,
+    },
     feedFilter: {
       enabled: partial.feedFilter?.enabled ?? defaults.feedFilter.enabled,
       allowlist: normalizeChannelList(partial.feedFilter?.allowlist),

@@ -3,12 +3,13 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   srcDir: '.',
   manifest: {
-    name: 'ytblocker',
+    name: 'feedblock',
     description:
-      'Block YouTube Shorts and non-educational videos. Local-first, BYO Claude API key.',
+      'Blank the YouTube and Instagram feeds — Shorts, Reels, Explore, and (soon) non-educational videos. Local-first, BYO Claude API key.',
     permissions: ['storage', 'activeTab'],
     host_permissions: [
       '*://*.youtube.com/*',
+      '*://*.instagram.com/*',
       'https://api.anthropic.com/*',
     ],
     icons: {
@@ -20,7 +21,7 @@ export default defineConfig({
     },
     action: {
       default_popup: 'popup.html',
-      default_title: 'ytblocker',
+      default_title: 'feedblock',
       default_icon: {
         16: 'icon/16.png',
         32: 'icon/32.png',
