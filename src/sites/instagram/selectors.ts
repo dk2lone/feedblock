@@ -23,7 +23,10 @@ export const ALWAYS_HIDE_SELECTORS: readonly string[] = [
   'a[href$="/reels/"][role="tab"]',
 ];
 
-export type NukeMode = 'posts' | 'full' | null;
+// 'posts' — hide post articles in <main> (home).
+// 'full'  — hide <main> entirely (explore, bare reels discover).
+// 'all'   — hide <body> entirely (used by full-block mode, any path).
+export type NukeMode = 'posts' | 'full' | 'all' | null;
 
 /**
  * Decide how aggressively to blank the current route.

@@ -2,6 +2,7 @@ import { getSettings, setSettings } from '@/src/background/storage';
 import {
   DEFAULT_SETTINGS,
   type AllowlistChannel,
+  type InstagramMode,
   type Settings,
 } from '@/src/shared/types';
 import {
@@ -46,6 +47,7 @@ function render(): void {
   $<HTMLInputElement>('feed-enabled').checked = current.feedFilter.enabled;
   $<HTMLInputElement>('claude-enabled').checked = current.claude.enabled;
   $<HTMLInputElement>('claude-key').value = current.claude.apiKey;
+  $<HTMLInputElement>(`ig-${current.instagram.mode}`).checked = true;
   renderList('allow');
   renderList('block');
 }
@@ -86,6 +88,10 @@ function wire(): void {
   const immediate = ['enabled', 'shorts-enabled', 'feed-enabled', 'claude-enabled'];
   immediate.forEach((id) => $(id).addEventListener('change', save));
 
+  document.querySelectorAll<HTMLInputElement>('input[name="ig-mode"]').forEach(
+    (radio) => radio.addEventListener('change', save),
+  );
+
   $('claude-key').addEventListener('input', debouncedSave);
   $('test-key').addEventListener('click', testKey);
 
@@ -104,6 +110,7 @@ async function save(): Promise<void> {
   current = {
     enabled: $<HTMLInputElement>('enabled').checked,
     shortFormVideo: { enabled: $<HTMLInputElement>('shorts-enabled').checked },
+    instagram: { mode: readInstagramMode() },
     feedFilter: {
       enabled: $<HTMLInputElement>('feed-enabled').checked,
       allowlist: current.feedFilter.allowlist,
@@ -117,6 +124,15 @@ async function save(): Promise<void> {
   };
   await setSettings(current);
   flashSaved();
+}
+
+function readInstagramMode(): InstagramMode {
+  const checked = document.querySelector<HTMLInputElement>(
+    'input[name="ig-mode"]:checked',
+  );
+  const value = checked?.value;
+  if (value === 'off' || value === 'partial' || value === 'full') return value;
+  return current.instagram.mode;
 }
 
 const debouncedSave = debounce(save, 400);

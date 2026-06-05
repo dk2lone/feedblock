@@ -27,22 +27,64 @@
       </section>
 
       <section class="card">
-        <h2>Short-form video & feeds</h2>
+        <h2>YouTube Shorts</h2>
         <label class="row">
           <span>
-            <strong>Blank YouTube Shorts and the Instagram feed</strong>
+            <strong>Blank YouTube Shorts</strong>
             <small>
-              <strong>YouTube:</strong> hides the Shorts tab, Shorts shelves on
-              the homepage, search results, and watch-page sidebar; redirects
-              <code>/shorts/*</code> back to the homepage.<br />
-              <strong>Instagram:</strong> blanks the home feed
-              (<code>/</code>), Explore (<code>/explore/*</code>), and Reels
-              (<code>/reels</code>, <code>/reel/*</code>). DMs, profiles,
-              individual posts, and search still work.
+              Hides the Shorts tab, Shorts shelves on the homepage, search
+              results, and watch-page sidebar; redirects <code>/shorts/*</code>
+              back to the homepage.
             </small>
           </span>
           <input type="checkbox" id="shorts-enabled" />
         </label>
+      </section>
+
+      <section class="card">
+        <h2>Instagram</h2>
+        <ul class="radio-list" role="radiogroup" aria-label="Instagram mode">
+          <li>
+            <label class="row">
+              <span>
+                <strong>Off</strong>
+                <small>Don't touch Instagram.</small>
+              </span>
+              <input type="radio" name="ig-mode" value="off" id="ig-off" />
+            </label>
+          </li>
+          <li>
+            <label class="row">
+              <span>
+                <strong>Partial — blank feeds only</strong>
+                <small>
+                  Blank the home feed (<code>/</code>), Explore
+                  (<code>/explore/*</code>), and Reels discover
+                  (<code>/reels</code>). DMs, profiles, individual posts,
+                  search, and single reels (<code>/reel/*</code>) still load.
+                </small>
+              </span>
+              <input
+                type="radio"
+                name="ig-mode"
+                value="partial"
+                id="ig-partial"
+              />
+            </label>
+          </li>
+          <li>
+            <label class="row">
+              <span>
+                <strong>Block completely</strong>
+                <small>
+                  Blank every page on <code>instagram.com</code> — including
+                  DMs, profiles, and posts.
+                </small>
+              </span>
+              <input type="radio" name="ig-mode" value="full" id="ig-full" />
+            </label>
+          </li>
+        </ul>
       </section>
 
       <section class="card">

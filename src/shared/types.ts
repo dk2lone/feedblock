@@ -1,5 +1,9 @@
 export type Strictness = 'lenient' | 'moderate' | 'strict';
 
+// 'partial' = blank feed/explore/reels only (DMs, profiles, posts, search,
+// single reels still load). 'full' = blank every page on instagram.com.
+export type InstagramMode = 'off' | 'partial' | 'full';
+
 export interface AllowlistChannel {
   id: string;
   handle: string;
@@ -11,6 +15,9 @@ export interface Settings {
   enabled: boolean;
   shortFormVideo: {
     enabled: boolean;
+  };
+  instagram: {
+    mode: InstagramMode;
   };
   feedFilter: {
     enabled: boolean;
@@ -27,6 +34,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   shortFormVideo: { enabled: true },
+  instagram: { mode: 'partial' },
   feedFilter: {
     enabled: false,
     allowlist: [],

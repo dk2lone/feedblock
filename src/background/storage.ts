@@ -2,6 +2,7 @@ import { browser } from 'wxt/browser';
 import {
   DEFAULT_SETTINGS,
   type AllowlistChannel,
+  type InstagramMode,
   type Settings,
 } from '@/src/shared/types';
 
@@ -14,6 +15,7 @@ type PartialSettings = {
   shortFormVideo?: Partial<Settings['shortFormVideo']>;
   // Legacy: pre-Instagram-Reels schema used `shorts`. Read it on load only.
   shorts?: Partial<Settings['shortFormVideo']>;
+  instagram?: Partial<Settings['instagram']>;
   feedFilter?: Omit<Partial<Settings['feedFilter']>, 'allowlist' | 'blocklist'> & {
     allowlist?: RawChannelList;
     blocklist?: RawChannelList;
@@ -45,12 +47,16 @@ export function onSettingsChanged(
 }
 
 function merge(defaults: Settings, partial: PartialSettings): Settings {
+  const shortFormVideo = {
+    ...defaults.shortFormVideo,
+    ...partial.shorts,
+    ...partial.shortFormVideo,
+  };
   return {
     enabled: partial.enabled ?? defaults.enabled,
-    shortFormVideo: {
-      ...defaults.shortFormVideo,
-      ...partial.shorts,
-      ...partial.shortFormVideo,
+    shortFormVideo,
+    instagram: {
+      mode: resolveInstagramMode(partial, shortFormVideo.enabled),
     },
     feedFilter: {
       enabled: partial.feedFilter?.enabled ?? defaults.feedFilter.enabled,
@@ -61,6 +67,20 @@ function merge(defaults: Settings, partial: PartialSettings): Settings {
     },
     claude: { ...defaults.claude, ...partial.claude },
   };
+}
+
+// Pre-split schema: Instagram blocking piggybacked on `shortFormVideo.enabled`.
+// For users upgrading, mirror that flag into the new instagram.mode field so
+// behavior doesn't change on first load.
+function resolveInstagramMode(
+  partial: PartialSettings,
+  sfvEnabled: boolean,
+): InstagramMode {
+  const stored = partial.instagram?.mode;
+  if (stored === 'off' || stored === 'partial' || stored === 'full') {
+    return stored;
+  }
+  return sfvEnabled ? 'partial' : 'off';
 }
 
 function normalizeChannelList(raw: RawChannelList): AllowlistChannel[] {

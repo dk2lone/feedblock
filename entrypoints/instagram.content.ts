@@ -11,10 +11,9 @@ export default defineContentScript({
   runAt: 'document_start',
   async main() {
     // Inject CSS immediately so the feed/Reels hide on first paint for the
-    // common case (extension on, short-form-video blocker on). Undone below
-    // if settings say otherwise — a flash of "blank" is preferable to a
-    // flash of feed.
-    installInstagramBlocker();
+    // common case (extension on, mode=partial). Undone below if settings say
+    // otherwise — a flash of "blank" is preferable to a flash of feed.
+    installInstagramBlocker('partial');
 
     apply(await getSettings());
     onSettingsChanged(apply);
@@ -22,9 +21,9 @@ export default defineContentScript({
 });
 
 function apply(settings: Settings): void {
-  if (settings.enabled && settings.shortFormVideo.enabled) {
-    installInstagramBlocker();
-  } else {
+  if (!settings.enabled || settings.instagram.mode === 'off') {
     uninstallInstagramBlocker();
+    return;
   }
+  installInstagramBlocker(settings.instagram.mode);
 }

@@ -3,14 +3,31 @@ import { ALWAYS_HIDE_SELECTORS, nukeModeForPath } from './selectors';
 const STYLE_ID = 'feedblock-instagram-style';
 const NUKE_ATTR = 'data-feedblock-nuke';
 const POLL_MS = 500;
+
+type ActiveMode = 'partial' | 'full';
+
 let listenersAttached = false;
-let active = false;
+let activeMode: ActiveMode | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let lastPath = '';
 
-export function installInstagramBlocker(): void {
-  active = true;
+/**
+ * Install or update the Instagram blocker.
+ *
+ * - 'partial': blank specific surfaces (home feed, explore, bare reels). DMs,
+ *   profiles, posts, search, and single reels still render.
+ * - 'full': blank every page on instagram.com.
+ *
+ * Idempotent — call again with a different mode to switch.
+ */
+export function installInstagramBlocker(mode: ActiveMode = 'partial'): void {
+  activeMode = mode;
   injectHidingStyle();
+  if (mode === 'full') {
+    document.documentElement.setAttribute(NUKE_ATTR, 'all');
+    return;
+  }
+  // partial — needs path-aware sync.
   syncNukeAttr();
   if (!listenersAttached) {
     // popstate catches back/forward. We don't patch pushState because
@@ -28,11 +45,11 @@ export function installInstagramBlocker(): void {
 }
 
 export function uninstallInstagramBlocker(): void {
-  active = false;
+  activeMode = null;
   document.getElementById(STYLE_ID)?.remove();
   document.documentElement.removeAttribute(NUKE_ATTR);
-  // popstate listener and poll stay attached; they no-op via the `active`
-  // flag. Re-installing is cheap.
+  // popstate listener and poll stay attached; they no-op via the `activeMode`
+  // check in syncNukeAttr. Re-installing is cheap.
 }
 
 function injectHidingStyle(): void {
@@ -43,9 +60,11 @@ function injectHidingStyle(): void {
   // 'posts' (home): hide individual post articles only. Stories strip and
   // sidebar nav (also inside <main> on the home layout) survive.
   // 'full' (explore, reels): blank <main> entirely.
+  // 'all' (full-block mode, every path): blank <body>.
   const nukeRules =
     `html[${NUKE_ATTR}="posts"] main article{display:none!important;}` +
-    `html[${NUKE_ATTR}="full"] main{display:none!important;}`;
+    `html[${NUKE_ATTR}="full"] main{display:none!important;}` +
+    `html[${NUKE_ATTR}="all"] body{display:none!important;}`;
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = alwaysHide + nukeRules;
@@ -53,7 +72,7 @@ function injectHidingStyle(): void {
 }
 
 function syncNukeAttr(): void {
-  if (!active) return;
+  if (activeMode !== 'partial') return;
   lastPath = location.pathname;
   const mode = nukeModeForPath(lastPath);
   if (mode === null) {
