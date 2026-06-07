@@ -2,7 +2,7 @@
 
 Open-source browser extension that blanks the YouTube and Instagram feeds — Shorts, Reels, Explore, and non-educational videos. Local-first — no backend, no telemetry. Optional LLM classifier uses your own Claude API key.
 
-(Internal project name is still `ytblocker` — package, repo, and bundle id are unchanged.)
+(Local checkout, npm package, and Safari bundle id are still `ytblocker` for historical reasons — only the GitHub repo and user-visible names have been migrated to `feedblock`.)
 
 **Status:** v0.0.1 — YouTube Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, Claude classifier, and Instagram blocker (Off / Partial / Full modes) all shipped. Verified in Safari and Chrome.
 
