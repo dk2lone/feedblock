@@ -1,6 +1,6 @@
 import { SHORTS_SELECTORS, SHORTS_URL_PREFIX } from './selectors';
 
-const STYLE_ID = 'ytblocker-shorts-style';
+const STYLE_ID = 'feedblock-shorts-style';
 let listenersAttached = false;
 let active = false;
 

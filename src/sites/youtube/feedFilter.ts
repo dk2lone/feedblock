@@ -2,9 +2,9 @@ import { browser } from 'wxt/browser';
 import type { AllowlistChannel } from '@/src/shared/types';
 import type { Verdict } from '@/src/background/classifier';
 
-const STYLE_ID = 'ytblocker-feedfilter-style';
-const HIDE_CLASS = 'ytblocker-feed-hidden';
-const CHECK_CLASS = 'ytblocker-feed-checking';
+const STYLE_ID = 'feedblock-feedfilter-style';
+const HIDE_CLASS = 'feedblock-feed-hidden';
+const CHECK_CLASS = 'feedblock-feed-checking';
 const TILE_HOME = 'ytd-rich-item-renderer';
 const TILE_UPNEXT = 'ytd-compact-video-renderer, yt-lockup-view-model';
 const SHELF_HOME = 'ytd-rich-section-renderer, ytd-rich-shelf-renderer';
@@ -89,24 +89,24 @@ function buildCss(): string {
     `font:500 11px/1 -apple-system,system-ui,sans-serif;` +
     `padding:4px 8px;border-radius:4px;` +
     `pointer-events:none;` +
-    `animation:ytblocker-pulse 1.2s ease-in-out infinite;` +
+    `animation:feedblock-pulse 1.2s ease-in-out infinite;` +
     `}` +
-    `@keyframes ytblocker-pulse{` +
+    `@keyframes feedblock-pulse{` +
     `0%,100%{opacity:0.7;}50%{opacity:1;}` +
     `}`;
   // Nuke the entire watch-page Up Next sidebar when filter is on, regardless
   // of allowlist contents.
   const hideUpNext =
-    `html[data-ytblocker-path="watch"] ytd-watch-next-secondary-results-renderer` +
+    `html[data-feedblock-path="watch"] ytd-watch-next-secondary-results-renderer` +
     `{display:none!important;}`;
   if (idSet.size === 0 && handleSet.size === 0) {
     return (
       hideMatched +
       checking +
       hideUpNext +
-      `html[data-ytblocker-path="home"] ytd-rich-section-renderer,` +
-      `html[data-ytblocker-path="home"] ytd-rich-shelf-renderer,` +
-      `html[data-ytblocker-path="home"] ${TILE_HOME}{display:none!important;}`
+      `html[data-feedblock-path="home"] ytd-rich-section-renderer,` +
+      `html[data-feedblock-path="home"] ytd-rich-shelf-renderer,` +
+      `html[data-feedblock-path="home"] ${TILE_HOME}{display:none!important;}`
     );
   }
   return hideMatched + checking + hideUpNext;
@@ -127,7 +127,7 @@ function scan(): void {
   scanGuideEntries();
 
   const surface = currentSurface();
-  document.documentElement.dataset.ytblockerPath = surface ?? '';
+  document.documentElement.dataset.feedblockPath = surface ?? '';
   if (!surface) return;
 
   if (surface === 'home') {

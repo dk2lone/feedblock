@@ -1,5 +1,5 @@
 {
-  "name": "ytblocker",
+  "name": "feedblock",
   "version": "0.0.1",
   "private": true,
   "description": "Open-source browser extension that blanks the YouTube and Instagram feeds — Shorts, Reels, Explore, and non-educational videos. Local-first, BYO Claude API key.",
@@ -13,8 +13,8 @@
     "zip": "wxt zip",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare",
-    "safari:wrap": "npm run build && xcrun safari-web-extension-converter .output/chrome-mv3 --project-location safari --app-name ytblocker --bundle-identifier com.dk2lone.ytblocker --macos-only --no-prompt --no-open --force",
-    "safari:open": "open safari/ytblocker/ytblocker.xcodeproj"
+    "safari:wrap": "npm run build && xcrun safari-web-extension-converter .output/chrome-mv3 --project-location safari --app-name feedblock --bundle-identifier com.dk2lone.feedblock --macos-only --no-prompt --no-open --force",
+    "safari:open": "open safari/feedblock/feedblock.xcodeproj"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.270",

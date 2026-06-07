@@ -1,4 +1,4 @@
-const STYLE_ID = 'ytblocker-search-history-style';
+const STYLE_ID = 'feedblock-search-history-style';
 
 // YouTube's search dropdown shows past searches (clock-icon entries with an ×
 // "Remove" button to delete the entry from history). We hide those rows while

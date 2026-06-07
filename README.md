@@ -2,8 +2,6 @@
 
 Open-source browser extension that blanks the YouTube and Instagram feeds — Shorts, Reels, Explore, and non-educational videos. Local-first — no backend, no telemetry. Optional LLM classifier uses your own Claude API key.
 
-(Local checkout, npm package, and Safari bundle id are still `ytblocker` for historical reasons — only the GitHub repo and user-visible names have been migrated to `feedblock`.)
-
 **Status:** v0.0.1 — YouTube Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, Claude classifier, and Instagram blocker (Off / Partial / Full modes) all shipped. Verified in Safari and Chrome.
 
 ## What it does today
@@ -50,7 +48,7 @@ Fastest path. Verified on Chrome 131+.
 
 ```bash
 git clone <this-repo>
-cd ytblocker
+cd feedblock
 npm install
 npm run build
 ```
@@ -71,7 +69,7 @@ Visit `youtube.com` — Shorts are gone. Open the extension's **Options** page t
 
 ```bash
 git clone <this-repo>
-cd ytblocker
+cd feedblock
 npm install
 npm run safari:wrap     # builds, then runs safari-web-extension-converter
 npm run safari:open     # opens the generated Xcode project
@@ -79,10 +77,10 @@ npm run safari:open     # opens the generated Xcode project
 
 In Xcode:
 
-1. Set the signing team for both `ytblocker` and `ytblocker Extension` targets (Signing & Capabilities → Team → your free Apple ID).
-2. Hit **Run** (⌘R). A small host app called "ytblocker" launches with a button telling you to enable the extension in Safari.
+1. Set the signing team for both `feedblock` and `feedblock Extension` targets (Signing & Capabilities → Team → your free Apple ID).
+2. Hit **Run** (⌘R). A small host app called "feedblock" launches with a button telling you to enable the extension in Safari.
 3. Quit the host app.
-4. In Safari: **Settings → Extensions** → flip on **ytblocker**.
+4. In Safari: **Settings → Extensions** → flip on **feedblock**.
 5. One-time: **Safari → Develop menu → Allow Unsigned Extensions** (the Develop menu appears once you enable Settings → Advanced → "Show features for web developers").
 
 > ⚠️ Safari resets "Allow Unsigned Extensions" each time you quit Safari. You'll need to re-enable it after every Safari restart, or enroll in the paid Apple Developer Program ($99/yr) and sign the app.

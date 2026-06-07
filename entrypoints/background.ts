@@ -16,7 +16,7 @@ export interface ClassifyMessage {
 }
 
 export default defineBackground(() => {
-  console.log('[ytblocker] background service worker active');
+  console.log('[feedblock] background service worker active');
 
   browser.runtime.onInstalled.addListener(async (details) => {
     if (details.reason !== 'install' && details.reason !== 'update') return;
@@ -55,7 +55,7 @@ async function seedAllowlist(): Promise<void> {
     if (result.ok) {
       resolved.push(result.channel);
     } else {
-      console.warn(`[ytblocker] failed to seed @${handle}: ${result.reason}`);
+      console.warn(`[feedblock] failed to seed @${handle}: ${result.reason}`);
     }
   }
 
@@ -64,5 +64,5 @@ async function seedAllowlist(): Promise<void> {
     ...settings,
     feedFilter: { ...settings.feedFilter, allowlist: resolved },
   });
-  console.log(`[ytblocker] seeded ${resolved.length} channel(s)`);
+  console.log(`[feedblock] seeded ${resolved.length} channel(s)`);
 }
