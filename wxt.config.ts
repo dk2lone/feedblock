@@ -5,7 +5,7 @@ export default defineConfig({
   manifest: {
     name: 'feedblock',
     description:
-      'Blank the YouTube and Instagram feeds — Shorts, Reels, Explore, and (soon) non-educational videos. Local-first, BYO Claude API key.',
+      'Blank the YouTube and Instagram feeds — Shorts, Reels, Explore, and non-educational videos. Local-first, BYO Claude API key.',
     permissions: ['storage', 'activeTab'],
     host_permissions: [
       '*://*.youtube.com/*',

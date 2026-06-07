@@ -4,7 +4,7 @@ Open-source browser extension that blanks the YouTube and Instagram feeds — Sh
 
 (Internal project name is still `ytblocker` — package, repo, and bundle id are unchanged.)
 
-**Status:** v0.0.1 — Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, and Claude classifier all shipped. Verified in Safari and Chrome.
+**Status:** v0.0.1 — YouTube Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, Claude classifier, and Instagram blocker (Off / Partial / Full modes) all shipped. Verified in Safari and Chrome.
 
 ## What it does today
 
@@ -32,6 +32,11 @@ Open-source browser extension that blanks the YouTube and Instagram feeds — Sh
 
 **Bonus:** Search-history dropdown entries (the ones with the × Remove button) are hidden in the YouTube searchbar. Predictive typeahead is left alone.
 
+**Instagram blocker (opt-in, three modes):**
+- **Off** — don't touch instagram.com
+- **Partial** — blanks the home feed, Explore, and the bare `/reels` index. DMs, profiles, posts, search, and single-reel URLs are left alone
+- **Block completely** — blanks every instagram.com page. Set-and-forget for "I just don't want to be here at all"
+
 ## What's coming
 
 - Classifier stats in Options (pass/block/error/cache-hit counters)
@@ -56,7 +61,7 @@ Then in Chrome:
 2. Enable **Developer mode** (top-right toggle)
 3. Click **Load unpacked** → pick the `.output/chrome-mv3/` folder
    - Note: `.output` is hidden in Finder. Press **⌘⇧.** in the file picker to reveal dotfolders, or **⌘⇧G** and paste the path.
-4. Click the puzzle-piece icon in the toolbar and **pin** ytblocker for easy access
+4. Click the puzzle-piece icon in the toolbar and **pin** feedblock for easy access
 
 Visit `youtube.com` — Shorts are gone. Open the extension's **Options** page to add channels or enable the classifier.
 
@@ -85,7 +90,7 @@ In Xcode:
 ## Configure the classifier
 
 1. Get an Anthropic API key at https://console.anthropic.com/settings/keys (small amount of credit required; classifier calls are ~$0.001/video).
-2. Open the ytblocker Options page → paste the key → click **Test**. Green = good.
+2. Open the feedblock Options page → paste the key → click **Test**. Green = good.
 3. Enable the **Claude** toggle.
 4. Reload `youtube.com`. Unknown-channel tiles will show a "checking…" badge until Haiku returns a verdict.
 
@@ -103,7 +108,7 @@ npm run compile   # type-check only
 
 ⚠️ Only re-run `npm run safari:wrap` if the manifest schema changes — the `--force` flag wipes your signing team and you'll have to set it up again.
 
-**Chrome dev loop:** after `npm run build`, hit the ↻ refresh icon on the ytblocker card in `chrome://extensions`, then reload the YouTube tab.
+**Chrome dev loop:** after `npm run build`, hit the ↻ refresh icon on the feedblock card in `chrome://extensions`, then reload the YouTube tab.
 
 ## How it works
 
