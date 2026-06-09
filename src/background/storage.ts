@@ -3,6 +3,7 @@ import {
   DEFAULT_SETTINGS,
   type AllowlistChannel,
   type InstagramMode,
+  type PasswordLock,
   type Settings,
 } from '@/src/shared/types';
 
@@ -21,6 +22,7 @@ type PartialSettings = {
     blocklist?: RawChannelList;
   };
   claude?: Partial<Settings['claude']>;
+  password?: Partial<PasswordLock>;
 };
 
 export async function getSettings(): Promise<Settings> {
@@ -66,7 +68,22 @@ function merge(defaults: Settings, partial: PartialSettings): Settings {
         partial.feedFilter?.strictness ?? defaults.feedFilter.strictness,
     },
     claude: { ...defaults.claude, ...partial.claude },
+    password: mergePassword(defaults.password, partial.password),
   };
+}
+
+function mergePassword(
+  defaults: PasswordLock,
+  partial: Partial<PasswordLock> | undefined,
+): PasswordLock {
+  const merged: PasswordLock = { ...defaults, ...(partial ?? {}) };
+  // A password is only "enabled" if we actually have a hash + salt to verify
+  // against. Defensive: stops a corrupted record from locking the user out
+  // of an empty hash.
+  if (!merged.hash || !merged.salt || merged.iterations <= 0) {
+    return { enabled: false, hash: '', salt: '', iterations: 0 };
+  }
+  return merged;
 }
 
 // Pre-split schema: Instagram blocking piggybacked on `shortFormVideo.enabled`.

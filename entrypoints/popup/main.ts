@@ -1,5 +1,6 @@
 import { browser } from 'wxt/browser';
 import { getSettings, setSettings } from '@/src/background/storage';
+import { verifyPassword } from '@/src/shared/password';
 import { resolveHandle } from '@/src/sites/youtube/channelResolver';
 import type { AllowlistChannel, Settings } from '@/src/shared/types';
 import type { DetectedChannel } from '@/entrypoints/youtube.content';
@@ -17,12 +18,50 @@ const $ = <T extends HTMLElement>(id: string): T => {
 
 async function init(): Promise<void> {
   settings = await getSettings();
-  renderToggles();
-  wireToggles();
   $('open-options').addEventListener('click', () => {
     void browser.runtime.openOptionsPage();
     window.close();
   });
+  if (settings.password.enabled) {
+    showLock();
+  } else {
+    await reveal();
+  }
+}
+
+function showLock(): void {
+  $('lock-section').hidden = false;
+  $('toggles-section').hidden = true;
+  $('channel-section').hidden = true;
+  $('unlock-form').addEventListener('submit', onUnlockSubmit);
+  $<HTMLInputElement>('unlock-password').focus();
+}
+
+async function onUnlockSubmit(e: Event): Promise<void> {
+  e.preventDefault();
+  const input = $<HTMLInputElement>('unlock-password');
+  const status = $('unlock-status');
+  const button = $<HTMLButtonElement>('unlock-submit');
+  button.disabled = true;
+  status.hidden = true;
+  const ok = await verifyPassword(input.value, settings.password);
+  button.disabled = false;
+  if (!ok) {
+    status.textContent = 'Incorrect password.';
+    status.className = 'status error';
+    status.hidden = false;
+    input.select();
+    return;
+  }
+  $('lock-section').hidden = true;
+  await reveal();
+}
+
+async function reveal(): Promise<void> {
+  $('toggles-section').hidden = false;
+  $('channel-section').hidden = false;
+  renderToggles();
+  wireToggles();
   detected = await detectChannelOnActiveTab();
   renderChannelCard();
   wireChannelButtons();

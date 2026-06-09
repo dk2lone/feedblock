@@ -24,6 +24,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font: 14px/1.5 -apple-system, system-ui, "Segoe UI", sans-serif;
@@ -315,4 +319,56 @@ code {
 
 #channel-status.error {
   color: var(--error);
+}
+
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.lock-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px;
+  max-width: 420px;
+  width: 100%;
+}
+
+.lock-card h1 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.lock-card .subtitle {
+  margin: 0 0 16px;
+}
+
+.lock-card .key-row {
+  margin-bottom: 8px;
+}
+
+#unlock-status.error {
+  color: var(--error);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+
+#password-set-status.ok,
+#password-change-status.ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+#password-set-status.error,
+#password-change-status.error {
+  color: var(--error);
+  font-weight: 600;
 }

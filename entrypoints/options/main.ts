@@ -1,4 +1,5 @@
 import { getSettings, setSettings } from '@/src/background/storage';
+import { hashPassword, verifyPassword } from '@/src/shared/password';
 import {
   DEFAULT_SETTINGS,
   type AllowlistChannel,
@@ -37,6 +38,46 @@ let current: Settings = DEFAULT_SETTINGS;
 
 async function init(): Promise<void> {
   current = await getSettings();
+  if (current.password.enabled) {
+    showLockScreen();
+  } else {
+    showSettings();
+  }
+}
+
+function showLockScreen(): void {
+  $('lock-screen').hidden = false;
+  $('settings-main').hidden = true;
+  $<HTMLInputElement>('unlock-password').value = '';
+  $('unlock-status').hidden = true;
+  $<HTMLInputElement>('unlock-password').focus();
+  $('unlock-form').addEventListener('submit', onUnlockSubmit, { once: true });
+}
+
+async function onUnlockSubmit(e: Event): Promise<void> {
+  e.preventDefault();
+  const input = $<HTMLInputElement>('unlock-password');
+  const status = $('unlock-status');
+  const submit = $<HTMLButtonElement>('unlock-submit');
+  submit.disabled = true;
+  status.hidden = true;
+  const ok = await verifyPassword(input.value, current.password);
+  submit.disabled = false;
+  if (ok) {
+    showSettings();
+    return;
+  }
+  status.textContent = 'Incorrect password.';
+  status.className = 'error';
+  status.hidden = false;
+  input.select();
+  // Re-arm the listener for the next attempt.
+  $('unlock-form').addEventListener('submit', onUnlockSubmit, { once: true });
+}
+
+function showSettings(): void {
+  $('lock-screen').hidden = true;
+  $('settings-main').hidden = false;
   render();
   wire();
 }
@@ -50,6 +91,19 @@ function render(): void {
   $<HTMLInputElement>(`ig-${current.instagram.mode}`).checked = true;
   renderList('allow');
   renderList('block');
+  renderPasswordSection();
+}
+
+function renderPasswordSection(): void {
+  const set = current.password.enabled;
+  $('password-state-label').textContent = set
+    ? 'Password is set'
+    : 'Password is not set';
+  $('password-state-hint').textContent = set
+    ? 'Settings and popup require this password to change.'
+    : 'Anyone with access to this browser can change settings.';
+  $('password-set').hidden = set;
+  $('password-change').hidden = !set;
 }
 
 function listFor(kind: Kind): AllowlistChannel[] {
@@ -104,6 +158,21 @@ function wire(): void {
       }
     });
   }
+
+  $('password-save').addEventListener('click', () => void setNewPassword());
+  $<HTMLInputElement>('password-new').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void setNewPassword();
+    }
+  });
+  $('password-change-save').addEventListener('click', () => void changePassword());
+  $<HTMLInputElement>('password-change-new').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void changePassword();
+    }
+  });
 }
 
 async function save(): Promise<void> {
@@ -121,9 +190,58 @@ async function save(): Promise<void> {
       enabled: $<HTMLInputElement>('claude-enabled').checked,
       apiKey: $<HTMLInputElement>('claude-key').value.trim(),
     },
+    password: current.password,
   };
   await setSettings(current);
   flashSaved();
+}
+
+async function setNewPassword(): Promise<void> {
+  const input = $<HTMLInputElement>('password-new');
+  const status = $('password-set-status');
+  const plain = input.value;
+  if (plain.length < 4) {
+    setStatus(status, 'error', 'Use at least 4 characters.');
+    return;
+  }
+  const hashed = await hashPassword(plain);
+  current = {
+    ...current,
+    password: { enabled: true, ...hashed },
+  };
+  await setSettings(current);
+  input.value = '';
+  setStatus(status, 'ok', 'Password set. Lock takes effect next time you open these pages.');
+  renderPasswordSection();
+}
+
+async function changePassword(): Promise<void> {
+  const input = $<HTMLInputElement>('password-change-new');
+  const status = $('password-change-status');
+  const plain = input.value;
+  if (plain === '') {
+    current = {
+      ...current,
+      password: { enabled: false, hash: '', salt: '', iterations: 0 },
+    };
+    await setSettings(current);
+    setStatus(status, 'ok', 'Password removed.');
+    renderPasswordSection();
+    return;
+  }
+  if (plain.length < 4) {
+    setStatus(status, 'error', 'Use at least 4 characters, or leave blank to remove.');
+    return;
+  }
+  const hashed = await hashPassword(plain);
+  current = {
+    ...current,
+    password: { enabled: true, ...hashed },
+  };
+  await setSettings(current);
+  input.value = '';
+  setStatus(status, 'ok', 'Password updated.');
+  renderPasswordSection();
 }
 
 function readInstagramMode(): InstagramMode {

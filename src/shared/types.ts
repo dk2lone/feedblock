@@ -11,6 +11,13 @@ export interface AllowlistChannel {
   addedAt: number;
 }
 
+export interface PasswordLock {
+  enabled: boolean;
+  hash: string;
+  salt: string;
+  iterations: number;
+}
+
 export interface Settings {
   enabled: boolean;
   shortFormVideo: {
@@ -29,6 +36,7 @@ export interface Settings {
     apiKey: string;
     enabled: boolean;
   };
+  password: PasswordLock;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -44,5 +52,11 @@ export const DEFAULT_SETTINGS: Settings = {
   claude: {
     apiKey: '',
     enabled: false,
+  },
+  password: {
+    enabled: false,
+    hash: '',
+    salt: '',
+    iterations: 0,
   },
 };

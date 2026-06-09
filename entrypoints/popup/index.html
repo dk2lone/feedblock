@@ -12,7 +12,22 @@
       <button type="button" id="open-options" class="link">Settings →</button>
     </header>
 
-    <section class="toggles">
+    <section id="lock-section" class="lock" hidden>
+      <p class="lock-title">Locked</p>
+      <form id="unlock-form" class="unlock-form">
+        <input
+          type="password"
+          id="unlock-password"
+          placeholder="Password"
+          autocomplete="current-password"
+          spellcheck="false"
+        />
+        <button type="submit" id="unlock-submit">Unlock</button>
+      </form>
+      <small id="unlock-status" class="status" hidden></small>
+    </section>
+
+    <section id="toggles-section" class="toggles" hidden>
       <label class="toggle">
         <span>Extension on</span>
         <input type="checkbox" id="enabled" />
@@ -27,7 +42,7 @@
       </label>
     </section>
 
-    <section class="channel">
+    <section id="channel-section" class="channel" hidden>
       <h2>This channel</h2>
       <div id="channel-empty" class="empty">
         Open a video or channel page on YouTube to add it to a list.

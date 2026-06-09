@@ -7,7 +7,33 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <main>
+    <section id="lock-screen" class="lock-screen" hidden>
+      <div class="lock-card">
+        <h1>feedblock is locked</h1>
+        <p class="subtitle">
+          Enter your password to change settings.
+        </p>
+        <form id="unlock-form" class="key-row">
+          <input
+            type="password"
+            id="unlock-password"
+            placeholder="Password"
+            autocomplete="current-password"
+            spellcheck="false"
+            autofocus
+          />
+          <button type="submit" id="unlock-submit">Unlock</button>
+        </form>
+        <small id="unlock-status" class="error" hidden></small>
+        <p class="hint">
+          Forgot your password? There is no recovery — that's the point. To
+          reset, remove and reinstall the extension. Your settings will be
+          erased.
+        </p>
+      </div>
+    </section>
+
+    <main id="settings-main" hidden>
       <header>
         <h1>feedblock</h1>
         <p class="subtitle">
@@ -169,6 +195,55 @@
           </div>
           <small id="key-status"></small>
         </label>
+      </section>
+
+      <section class="card">
+        <h2>Password protection</h2>
+        <p class="hint">
+          Set a password to lock these settings and the popup toggles. The
+          password is hashed locally with PBKDF2 — feedblock never sends it
+          anywhere. There is no recovery flow; if you forget it you'll need
+          to reinstall the extension.
+        </p>
+
+        <div id="password-status-row" class="row" style="cursor: default">
+          <span>
+            <strong id="password-state-label">Password is not set</strong>
+            <small id="password-state-hint">
+              Anyone with access to this browser can change settings.
+            </small>
+          </span>
+        </div>
+
+        <div id="password-set" class="field" hidden>
+          <span>Set a password</span>
+          <div class="key-row">
+            <input
+              type="password"
+              id="password-new"
+              placeholder="New password"
+              autocomplete="new-password"
+              spellcheck="false"
+            />
+            <button type="button" id="password-save">Set password</button>
+          </div>
+          <small id="password-set-status"></small>
+        </div>
+
+        <div id="password-change" class="field" hidden>
+          <span>Change or remove password</span>
+          <div class="key-row">
+            <input
+              type="password"
+              id="password-change-new"
+              placeholder="New password (leave blank to remove)"
+              autocomplete="new-password"
+              spellcheck="false"
+            />
+            <button type="button" id="password-change-save">Update</button>
+          </div>
+          <small id="password-change-status"></small>
+        </div>
       </section>
 
       <footer>
