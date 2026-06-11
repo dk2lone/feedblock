@@ -2,7 +2,7 @@
 
 Open-source browser extension that blanks the YouTube and Instagram feeds — Shorts, Reels, Explore, and non-educational videos. Local-first — no backend, no telemetry. Optional LLM classifier uses your own Claude API key.
 
-**Status:** v0.0.1 — YouTube Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, Claude classifier, and Instagram blocker (Off / Partial / Full modes) all shipped. Verified in Safari and Chrome.
+**Status:** v0.0.1 — YouTube Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, Claude classifier, Instagram blocker (Off / Partial / Full modes), password lock with timed unlock, and per-tab toolbar icon all shipped. Verified in Safari and Chrome.
 
 ## What it does today
 
@@ -25,8 +25,22 @@ Open-source browser extension that blanks the YouTube and Instagram feeds — Sh
 - "checking…" badge on tiles awaiting a verdict
 
 **Toolbar popup:**
-- Click the icon while on a video or channel page → see current channel + one-click **Allow** / **Block** buttons
-- Mirrors the master toggles (Enabled / Feed filter / Claude)
+- Click the icon while on a video or channel page → see current channel + one-click **Allow** / **Block** buttons (always accessible, never locked)
+- Mirrors the master toggles (Enabled / Feed filter)
+- Claude toggle is always visible regardless of lock state
+
+**Password lock (opt-in):**
+- Set a password in the Options page to gate all settings changes
+- Passwords hashed locally with PBKDF2-SHA256 (200k iterations, random 16-byte salt) — never leave the extension
+- **3-phase timed unlock:**
+  1. Enter password → **15-minute cooldown** with countdown and cancel button
+  2. After cooldown, a browser notification fires and a **1-minute editing window** opens — make changes now or the cycle restarts
+  3. If changes are made, they persist for a **30-minute enjoy period** (settings stay fully editable), then auto-revert: extension on, feed filter on
+- Channel add/block and Claude settings are **never gated** by the password
+- No recovery flow — if you forget your password, reinstall the extension
+
+**Toolbar icon:**
+- Angry-bird icon switches per tab — happy bird on YouTube/Instagram, sad bird elsewhere
 
 **Bonus:** Search-history dropdown entries (the ones with the × Remove button) are hidden in the YouTube searchbar. Predictive typeahead is left alone.
 
