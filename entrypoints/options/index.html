@@ -11,7 +11,8 @@
       <div class="lock-card">
         <h1>feedblock is locked</h1>
         <p class="subtitle">
-          Enter your password to change settings.
+          Enter your password to start a 15-minute cooldown, then you'll get
+          1 minute to change settings.
         </p>
         <form id="unlock-form" class="key-row">
           <input
@@ -31,6 +32,63 @@
           erased.
         </p>
       </div>
+    </section>
+
+    <section id="cooldown-screen" class="lock-screen" hidden>
+      <div class="lock-card">
+        <h1>Cooling down…</h1>
+        <p class="subtitle">
+          You'll get a notification and 1 minute to change settings when the
+          timer ends. You can close this tab; the countdown keeps running.
+        </p>
+        <p id="cooldown-countdown" class="countdown">15:00</p>
+        <button type="button" id="cooldown-cancel" class="cancel-btn">
+          Cancel
+        </button>
+      </div>
+    </section>
+
+    <section id="editing-banner" class="editing-banner" hidden>
+      <span>Editing window — closes in <strong id="editing-countdown">1:00</strong>. Changes you make will revert after 30 minutes.</span>
+    </section>
+
+    <section id="active-banner" class="window-banner" hidden>
+      <span>Changes revert in <strong id="active-countdown">30:00</strong>. Extension and feed filter will turn back on.</span>
+    </section>
+
+    <section id="claude-section" class="card" style="max-width:640px;margin:24px auto 0;">
+      <h2>Claude classifier</h2>
+      <p class="hint">
+        For videos not on either list above, ask Claude whether each one is
+        educational. Each call goes from your browser directly to
+        <code>api.anthropic.com</code> — never through anyone else's server.
+        Verdicts are cached per video, so cost is bounded.
+      </p>
+      <label class="row">
+        <span>
+          <strong>Use Claude for unknown channels</strong>
+          <small>
+            Required: paste an API key below and click Test. Tiles render with
+            a "checking…" badge while Claude classifies them, then hide if
+            blocked.
+          </small>
+        </span>
+        <input type="checkbox" id="claude-enabled" />
+      </label>
+      <label class="field">
+        <span>Claude API key</span>
+        <div class="key-row">
+          <input
+            type="password"
+            id="claude-key"
+            placeholder="sk-ant-..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button type="button" id="test-key">Test</button>
+        </div>
+        <small id="key-status"></small>
+      </label>
     </section>
 
     <main id="settings-main" hidden>
@@ -160,41 +218,6 @@
         </div>
 
         <ul id="block-list" class="channel-list"></ul>
-      </section>
-
-      <section class="card">
-        <h2>Claude classifier</h2>
-        <p class="hint">
-          For videos not on either list above, ask Claude whether each one is
-          educational. Each call goes from your browser directly to
-          <code>api.anthropic.com</code> — never through anyone else's server.
-          Verdicts are cached per video, so cost is bounded.
-        </p>
-        <label class="row">
-          <span>
-            <strong>Use Claude for unknown channels</strong>
-            <small>
-              Required: paste an API key below and click Test. Tiles render with
-              a "checking…" badge while Claude classifies them, then hide if
-              blocked.
-            </small>
-          </span>
-          <input type="checkbox" id="claude-enabled" />
-        </label>
-        <label class="field">
-          <span>Claude API key</span>
-          <div class="key-row">
-            <input
-              type="password"
-              id="claude-key"
-              placeholder="sk-ant-..."
-              autocomplete="off"
-              spellcheck="false"
-            />
-            <button type="button" id="test-key">Test</button>
-          </div>
-          <small id="key-status"></small>
-        </label>
       </section>
 
       <section class="card">

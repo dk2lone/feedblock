@@ -6,6 +6,7 @@ import {
   type PasswordLock,
   type Settings,
 } from '@/src/shared/types';
+import { getUnlockState, withGuardRestored, withTimersCleared } from '@/src/shared/unlockState';
 
 const KEY = 'settings';
 
@@ -27,7 +28,18 @@ type PartialSettings = {
 
 export async function getSettings(): Promise<Settings> {
   const result = await browser.storage.local.get(KEY);
-  return merge(DEFAULT_SETTINGS, (result[KEY] as PartialSettings) ?? {});
+  const merged = merge(DEFAULT_SETTINGS, (result[KEY] as PartialSettings) ?? {});
+  // Lazy cleanup: if the browser was closed when an alarm would have fired,
+  // handle expired states on the next read.
+  const state = getUnlockState(merged.password);
+  if (state.kind === 'locked' && (merged.password.unlockAt > 0 || merged.password.revertAt > 0)) {
+    const cleaned = merged.password.revertAt > 0 && Date.now() >= merged.password.revertAt
+      ? withGuardRestored(merged)
+      : withTimersCleared(merged);
+    await setSettings(cleaned);
+    return cleaned;
+  }
+  return merged;
 }
 
 export async function setSettings(settings: Settings): Promise<void> {
@@ -81,7 +93,16 @@ function mergePassword(
   // against. Defensive: stops a corrupted record from locking the user out
   // of an empty hash.
   if (!merged.hash || !merged.salt || merged.iterations <= 0) {
-    return { enabled: false, hash: '', salt: '', iterations: 0 };
+    return {
+      enabled: false,
+      hash: '',
+      salt: '',
+      iterations: 0,
+      unlockAt: 0,
+      editExpiresAt: 0,
+      revertAt: 0,
+      guard: null,
+    };
   }
   return merged;
 }

@@ -1,6 +1,13 @@
 import { browser } from 'wxt/browser';
-import { getSettings, setSettings } from '@/src/background/storage';
+import { getSettings, onSettingsChanged, setSettings } from '@/src/background/storage';
 import { verifyPassword } from '@/src/shared/password';
+import {
+  formatRemaining,
+  getUnlockState,
+  withCooldownStarted,
+  withEnjoyStarted,
+  withUnlockCancelled,
+} from '@/src/shared/unlockState';
 import { resolveHandle } from '@/src/sites/youtube/channelResolver';
 import type { AllowlistChannel, Settings } from '@/src/shared/types';
 import type { DetectedChannel } from '@/entrypoints/youtube.content';
@@ -9,6 +16,11 @@ type Kind = 'allow' | 'block';
 
 let settings: Settings;
 let detected: DetectedChannel | null = null;
+let tickHandle: ReturnType<typeof setInterval> | null = null;
+let renderedPhase: string | null = null;
+let togglesWired = false;
+let claudeWired = false;
+let channelWired = false;
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -22,19 +34,135 @@ async function init(): Promise<void> {
     void browser.runtime.openOptionsPage();
     window.close();
   });
-  if (settings.password.enabled) {
-    showLock();
-  } else {
-    await reveal();
-  }
+  $('unlock-form').addEventListener('submit', (e) => void onUnlockSubmit(e));
+  $('cooldown-cancel').addEventListener('click', () => void onCancel());
+
+  renderClaude();
+  wireClaude();
+
+  onSettingsChanged((s) => {
+    settings = s;
+    renderClaude();
+    render();
+  });
+  render();
+  startTicker();
 }
 
-function showLock(): void {
-  $('lock-section').hidden = false;
+function render(): void {
+  const state = getUnlockState(settings.password);
+
+  if (state.kind === 'no-password') {
+    showOpen();
+    return;
+  }
+  if (state.kind === 'editing') {
+    showEditing(state.editExpiresAt);
+    return;
+  }
+  if (state.kind === 'active') {
+    showActive(state.revertAt);
+    return;
+  }
+  if (state.kind === 'cooldown') {
+    showCooldown(state.unlockAt);
+    return;
+  }
+  showLocked();
+}
+
+function hideAll(): void {
+  $('lock-section').hidden = true;
+  $('cooldown-section').hidden = true;
+  $('editing-section').hidden = true;
+  $('active-section').hidden = true;
   $('toggles-section').hidden = true;
   $('channel-section').hidden = true;
-  $('unlock-form').addEventListener('submit', onUnlockSubmit);
-  $<HTMLInputElement>('unlock-password').focus();
+}
+
+function showLocked(): void {
+  hideAll();
+  $('lock-section').hidden = false;
+  if (renderedPhase !== 'locked') {
+    $<HTMLInputElement>('unlock-password').value = '';
+    $('unlock-status').hidden = true;
+    $<HTMLInputElement>('unlock-password').focus();
+  }
+  renderedPhase = 'locked';
+}
+
+function showCooldown(unlockAt: number): void {
+  hideAll();
+  $('cooldown-section').hidden = false;
+  $('cooldown-countdown').textContent = formatRemaining(unlockAt - Date.now());
+  renderedPhase = 'cooldown';
+}
+
+function showEditing(editExpiresAt: number): void {
+  hideAll();
+  $('editing-section').hidden = false;
+  $('toggles-section').hidden = false;
+  $('channel-section').hidden = false;
+  $('editing-countdown').textContent = formatRemaining(editExpiresAt - Date.now());
+  if (renderedPhase !== 'editing') {
+    renderToggles();
+    if (!togglesWired) {
+      wireToggles();
+      togglesWired = true;
+    }
+    if (!channelWired) {
+      void revealChannel();
+      channelWired = true;
+    }
+  }
+  renderedPhase = 'editing';
+}
+
+function showActive(revertAt: number): void {
+  hideAll();
+  $('active-section').hidden = false;
+  $('active-countdown').textContent = formatRemaining(revertAt - Date.now());
+  renderedPhase = 'active';
+}
+
+function showOpen(): void {
+  hideAll();
+  $('toggles-section').hidden = false;
+  $('channel-section').hidden = false;
+  if (renderedPhase !== 'open') {
+    renderToggles();
+    if (!togglesWired) {
+      wireToggles();
+      togglesWired = true;
+    }
+    if (!channelWired) {
+      void revealChannel();
+      channelWired = true;
+    }
+  }
+  renderedPhase = 'open';
+}
+
+function startTicker(): void {
+  if (tickHandle) clearInterval(tickHandle);
+  tickHandle = setInterval(() => {
+    const state = getUnlockState(settings.password);
+    if (state.kind === 'cooldown') {
+      $('cooldown-countdown').textContent = formatRemaining(state.unlockAt - Date.now());
+      if (Date.now() >= state.unlockAt) render();
+      return;
+    }
+    if (state.kind === 'editing') {
+      $('editing-countdown').textContent = formatRemaining(state.editExpiresAt - Date.now());
+      if (Date.now() >= state.editExpiresAt) render();
+      return;
+    }
+    if (state.kind === 'active') {
+      $('active-countdown').textContent = formatRemaining(state.revertAt - Date.now());
+      if (Date.now() >= state.revertAt) render();
+      return;
+    }
+  }, 1000);
 }
 
 async function onUnlockSubmit(e: Event): Promise<void> {
@@ -53,33 +181,49 @@ async function onUnlockSubmit(e: Event): Promise<void> {
     input.select();
     return;
   }
-  $('lock-section').hidden = true;
-  await reveal();
+  settings = withCooldownStarted(settings);
+  await setSettings(settings);
+  render();
 }
 
-async function reveal(): Promise<void> {
-  $('toggles-section').hidden = false;
-  $('channel-section').hidden = false;
-  renderToggles();
-  wireToggles();
-  detected = await detectChannelOnActiveTab();
-  renderChannelCard();
-  wireChannelButtons();
+async function onCancel(): Promise<void> {
+  settings = withUnlockCancelled(settings);
+  await setSettings(settings);
+  render();
+}
+
+function renderClaude(): void {
+  $<HTMLInputElement>('claude-enabled').checked = settings.claude.enabled;
+}
+
+function wireClaude(): void {
+  if (claudeWired) return;
+  $('claude-enabled').addEventListener('change', () => void saveClaude());
+  claudeWired = true;
+}
+
+async function saveClaude(): Promise<void> {
+  settings = {
+    ...settings,
+    claude: { ...settings.claude, enabled: $<HTMLInputElement>('claude-enabled').checked },
+  };
+  await setSettings(settings);
 }
 
 function renderToggles(): void {
   $<HTMLInputElement>('enabled').checked = settings.enabled;
   $<HTMLInputElement>('feed-enabled').checked = settings.feedFilter.enabled;
-  $<HTMLInputElement>('claude-enabled').checked = settings.claude.enabled;
 }
 
 function wireToggles(): void {
-  ['enabled', 'feed-enabled', 'claude-enabled'].forEach((id) => {
+  ['enabled', 'feed-enabled'].forEach((id) => {
     $(id).addEventListener('change', () => void saveToggles());
   });
 }
 
 async function saveToggles(): Promise<void> {
+  // If we're in the editing window and user makes a change, start the 30-min enjoy period.
+  const state = getUnlockState(settings.password);
   settings = {
     ...settings,
     enabled: $<HTMLInputElement>('enabled').checked,
@@ -87,12 +231,17 @@ async function saveToggles(): Promise<void> {
       ...settings.feedFilter,
       enabled: $<HTMLInputElement>('feed-enabled').checked,
     },
-    claude: {
-      ...settings.claude,
-      enabled: $<HTMLInputElement>('claude-enabled').checked,
-    },
   };
+  if (state.kind === 'editing') {
+    settings = withEnjoyStarted(settings);
+  }
   await setSettings(settings);
+}
+
+async function revealChannel(): Promise<void> {
+  detected = await detectChannelOnActiveTab();
+  renderChannelCard();
+  wireChannelButtons();
 }
 
 async function detectChannelOnActiveTab(): Promise<DetectedChannel | null> {
@@ -109,7 +258,6 @@ async function detectChannelOnActiveTab(): Promise<DetectedChannel | null> {
     })) as DetectedChannel | null;
     return result ?? null;
   } catch {
-    // Content script may not be ready (page still loading, or non-YT subdomain)
     return null;
   }
 }
@@ -169,6 +317,8 @@ async function toggle(kind: Kind): Promise<void> {
 
   if (isOnList(kind)) {
     settings = removeFromList(settings, kind);
+    const state = getUnlockState(settings.password);
+    if (state.kind === 'editing') settings = withEnjoyStarted(settings);
     await setSettings(settings);
     status.textContent = `Removed from ${labelFor(kind)}`;
     status.className = 'ok';
@@ -188,10 +338,11 @@ async function toggle(kind: Kind): Promise<void> {
     return;
   }
 
-  // Adding to one list removes from the other — mutual exclusion.
   const other: Kind = kind === 'allow' ? 'block' : 'allow';
   settings = removeFromList(settings, other);
   settings = addToList(settings, kind, channel);
+  const state = getUnlockState(settings.password);
+  if (state.kind === 'editing') settings = withEnjoyStarted(settings);
   await setSettings(settings);
   status.textContent = `Added to ${labelFor(kind)}`;
   status.className = 'ok';
@@ -200,16 +351,10 @@ async function toggle(kind: Kind): Promise<void> {
 
 async function buildChannelEntry(): Promise<AllowlistChannel | null> {
   if (!detected) return null;
-  // Best path: we have a handle, so call resolveHandle to get a canonical
-  // {id, handle, displayName} the same way the Options "Add" flow does.
   if (detected.handle) {
     const result = await resolveHandle(detected.handle);
     if (result.ok) return result.channel;
-    // Fall through to id-only fallback below.
   }
-  // Channel-id-only fallback (e.g. /channel/UC... pages that didn't expose
-  // a handle). Store the id with the id as a placeholder handle so storage
-  // normalization accepts it; matching is id-or-handle.
   if (detected.id) {
     return {
       id: detected.id,

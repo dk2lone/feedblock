@@ -212,3 +212,47 @@ section:last-of-type {
 .lock .status.error {
   color: var(--error);
 }
+
+.lock-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.countdown {
+  margin: 4px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+
+.cancel-btn {
+  margin-top: 12px;
+  padding: 6px 12px;
+  font: inherit;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.window-banner {
+  background: var(--card);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 8px 16px;
+}
+
+.window-banner strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text);
+}

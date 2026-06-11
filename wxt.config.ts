@@ -6,7 +6,7 @@ export default defineConfig({
     name: 'feedblock',
     description:
       'Blank the YouTube and Instagram feeds — Shorts, Reels, Explore, and non-educational videos. Local-first, BYO Claude API key.',
-    permissions: ['storage', 'activeTab'],
+    permissions: ['storage', 'activeTab', 'alarms', 'notifications'],
     host_permissions: [
       '*://*.youtube.com/*',
       '*://*.instagram.com/*',

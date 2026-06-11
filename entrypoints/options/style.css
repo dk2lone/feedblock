@@ -372,3 +372,50 @@ code {
   color: var(--error);
   font-weight: 600;
 }
+
+.countdown {
+  margin: 16px 0 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+
+.cancel-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  font: inherit;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.editing-banner,
+.window-banner {
+  max-width: 640px;
+  margin: 24px auto 0;
+  padding: 10px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.editing-banner {
+  border-color: var(--accent);
+}
+
+.editing-banner strong,
+.window-banner strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text);
+}

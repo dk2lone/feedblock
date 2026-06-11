@@ -25,6 +25,37 @@
         <button type="submit" id="unlock-submit">Unlock</button>
       </form>
       <small id="unlock-status" class="status" hidden></small>
+      <small class="lock-hint">15-min cooldown, then 1 min to change settings.</small>
+    </section>
+
+    <section id="cooldown-section" class="lock" hidden>
+      <p class="lock-title">Cooling down…</p>
+      <p class="countdown" id="cooldown-countdown">15:00</p>
+      <small class="lock-hint">
+        You'll get a notification and 1 minute to change settings.
+      </small>
+      <button type="button" id="cooldown-cancel" class="cancel-btn">
+        Cancel
+      </button>
+    </section>
+
+    <section id="editing-section" class="lock" hidden>
+      <p class="lock-title">Editing window open</p>
+      <p class="countdown" id="editing-countdown">1:00</p>
+      <small class="lock-hint">
+        Make your changes now. Window closes when the timer ends.
+      </small>
+    </section>
+
+    <section id="active-section" class="window-banner" hidden>
+      <span>Changes revert in <strong id="active-countdown">30:00</strong></span>
+    </section>
+
+    <section id="claude-section" class="toggles">
+      <label class="toggle">
+        <span>Use Claude</span>
+        <input type="checkbox" id="claude-enabled" />
+      </label>
     </section>
 
     <section id="toggles-section" class="toggles" hidden>
@@ -35,10 +66,6 @@
       <label class="toggle">
         <span>Filter feed</span>
         <input type="checkbox" id="feed-enabled" />
-      </label>
-      <label class="toggle">
-        <span>Use Claude</span>
-        <input type="checkbox" id="claude-enabled" />
       </label>
     </section>
 

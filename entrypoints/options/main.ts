@@ -1,4 +1,4 @@
-import { getSettings, setSettings } from '@/src/background/storage';
+import { getSettings, onSettingsChanged, setSettings } from '@/src/background/storage';
 import { hashPassword, verifyPassword } from '@/src/shared/password';
 import {
   DEFAULT_SETTINGS,
@@ -6,6 +6,13 @@ import {
   type InstagramMode,
   type Settings,
 } from '@/src/shared/types';
+import {
+  formatRemaining,
+  getUnlockState,
+  withCooldownStarted,
+  withEnjoyStarted,
+  withUnlockCancelled,
+} from '@/src/shared/unlockState';
 import {
   normalizeHandle,
   resolveHandle,
@@ -35,27 +42,92 @@ const $ = <T extends HTMLElement>(id: string): T => {
 };
 
 let current: Settings = DEFAULT_SETTINGS;
+let settingsWired = false;
+let claudeWired = false;
+let tickHandle: ReturnType<typeof setInterval> | null = null;
 
 async function init(): Promise<void> {
   current = await getSettings();
-  if (current.password.enabled) {
-    showLockScreen();
-  } else {
-    showSettings();
+  $('unlock-form').addEventListener('submit', (e) => void onUnlockSubmit(e));
+  $('cooldown-cancel').addEventListener('click', () => void onCancel());
+
+  renderClaude();
+  wireClaude();
+
+  onSettingsChanged((s) => {
+    current = s;
+    renderClaude();
+    routeScreen();
+  });
+  routeScreen();
+  startTicker();
+}
+
+function routeScreen(): void {
+  const state = getUnlockState(current.password);
+  if (state.kind === 'no-password' || state.kind === 'editing') {
+    showSettings(state.kind === 'editing' ? state.editExpiresAt : null);
+    return;
   }
+  if (state.kind === 'active') {
+    showActive(state.revertAt);
+    return;
+  }
+  if (state.kind === 'cooldown') {
+    showCooldown(state.unlockAt);
+    return;
+  }
+  showLockScreen();
 }
 
 function showLockScreen(): void {
   $('lock-screen').hidden = false;
+  $('cooldown-screen').hidden = true;
+  $('editing-banner').hidden = true;
+  $('active-banner').hidden = true;
   $('settings-main').hidden = true;
   $<HTMLInputElement>('unlock-password').value = '';
   $('unlock-status').hidden = true;
   $<HTMLInputElement>('unlock-password').focus();
-  $('unlock-form').addEventListener('submit', onUnlockSubmit, { once: true });
+}
+
+function showCooldown(unlockAt: number): void {
+  $('lock-screen').hidden = true;
+  $('cooldown-screen').hidden = false;
+  $('editing-banner').hidden = true;
+  $('active-banner').hidden = true;
+  $('settings-main').hidden = true;
+  $('cooldown-countdown').textContent = formatRemaining(unlockAt - Date.now());
+}
+
+function showActive(revertAt: number): void {
+  $('lock-screen').hidden = true;
+  $('cooldown-screen').hidden = true;
+  $('editing-banner').hidden = true;
+  $('active-banner').hidden = false;
+  $('settings-main').hidden = true;
+  $('active-countdown').textContent = formatRemaining(revertAt - Date.now());
+}
+
+function showSettings(editExpiresAt: number | null): void {
+  $('lock-screen').hidden = true;
+  $('cooldown-screen').hidden = true;
+  $('editing-banner').hidden = editExpiresAt === null;
+  $('active-banner').hidden = true;
+  $('settings-main').hidden = false;
+  if (editExpiresAt !== null) {
+    $('editing-countdown').textContent = formatRemaining(editExpiresAt - Date.now());
+  }
+  render();
+  if (!settingsWired) {
+    wire();
+    settingsWired = true;
+  }
 }
 
 async function onUnlockSubmit(e: Event): Promise<void> {
   e.preventDefault();
+  if (getUnlockState(current.password).kind !== 'locked') return;
   const input = $<HTMLInputElement>('unlock-password');
   const status = $('unlock-status');
   const submit = $<HTMLButtonElement>('unlock-submit');
@@ -63,31 +135,76 @@ async function onUnlockSubmit(e: Event): Promise<void> {
   status.hidden = true;
   const ok = await verifyPassword(input.value, current.password);
   submit.disabled = false;
-  if (ok) {
-    showSettings();
+  if (!ok) {
+    status.textContent = 'Incorrect password.';
+    status.className = 'error';
+    status.hidden = false;
+    input.select();
     return;
   }
-  status.textContent = 'Incorrect password.';
-  status.className = 'error';
-  status.hidden = false;
-  input.select();
-  // Re-arm the listener for the next attempt.
-  $('unlock-form').addEventListener('submit', onUnlockSubmit, { once: true });
+  current = withCooldownStarted(current);
+  await setSettings(current);
+  routeScreen();
 }
 
-function showSettings(): void {
-  $('lock-screen').hidden = true;
-  $('settings-main').hidden = false;
-  render();
-  wire();
+async function onCancel(): Promise<void> {
+  current = withUnlockCancelled(current);
+  await setSettings(current);
+  routeScreen();
 }
+
+function startTicker(): void {
+  if (tickHandle) clearInterval(tickHandle);
+  tickHandle = setInterval(() => {
+    const state = getUnlockState(current.password);
+    if (state.kind === 'cooldown') {
+      $('cooldown-countdown').textContent = formatRemaining(state.unlockAt - Date.now());
+      if (Date.now() >= state.unlockAt) routeScreen();
+      return;
+    }
+    if (state.kind === 'editing') {
+      $('editing-countdown').textContent = formatRemaining(state.editExpiresAt - Date.now());
+      if (Date.now() >= state.editExpiresAt) routeScreen();
+      return;
+    }
+    if (state.kind === 'active') {
+      $('active-countdown').textContent = formatRemaining(state.revertAt - Date.now());
+      if (Date.now() >= state.revertAt) routeScreen();
+    }
+  }, 1000);
+}
+
+function renderClaude(): void {
+  $<HTMLInputElement>('claude-enabled').checked = current.claude.enabled;
+  $<HTMLInputElement>('claude-key').value = current.claude.apiKey;
+}
+
+function wireClaude(): void {
+  if (claudeWired) return;
+  $('claude-enabled').addEventListener('change', saveClaude);
+  $('claude-key').addEventListener('input', debouncedSaveClaude);
+  $('test-key').addEventListener('click', testKey);
+  claudeWired = true;
+}
+
+function saveClaude(): void {
+  current = {
+    ...current,
+    claude: {
+      enabled: $<HTMLInputElement>('claude-enabled').checked,
+      apiKey: $<HTMLInputElement>('claude-key').value.trim(),
+    },
+  };
+  void setSettings(current);
+  flashSaved();
+}
+
+const debouncedSaveClaude = debounce(saveClaude, 400);
 
 function render(): void {
   $<HTMLInputElement>('enabled').checked = current.enabled;
   $<HTMLInputElement>('shorts-enabled').checked = current.shortFormVideo.enabled;
   $<HTMLInputElement>('feed-enabled').checked = current.feedFilter.enabled;
-  $<HTMLInputElement>('claude-enabled').checked = current.claude.enabled;
-  $<HTMLInputElement>('claude-key').value = current.claude.apiKey;
   $<HTMLInputElement>(`ig-${current.instagram.mode}`).checked = true;
   renderList('allow');
   renderList('block');
@@ -139,15 +256,12 @@ function channelRow(kind: Kind, channel: AllowlistChannel): HTMLLIElement {
 }
 
 function wire(): void {
-  const immediate = ['enabled', 'shorts-enabled', 'feed-enabled', 'claude-enabled'];
+  const immediate = ['enabled', 'shorts-enabled', 'feed-enabled'];
   immediate.forEach((id) => $(id).addEventListener('change', save));
 
   document.querySelectorAll<HTMLInputElement>('input[name="ig-mode"]').forEach(
     (radio) => radio.addEventListener('change', save),
   );
-
-  $('claude-key').addEventListener('input', debouncedSave);
-  $('test-key').addEventListener('click', testKey);
 
   for (const kind of ['allow', 'block'] as Kind[]) {
     $(IDS[kind].button).addEventListener('click', () => void addChannel(kind));
@@ -186,12 +300,13 @@ async function save(): Promise<void> {
       blocklist: current.feedFilter.blocklist,
       strictness: current.feedFilter.strictness,
     },
-    claude: {
-      enabled: $<HTMLInputElement>('claude-enabled').checked,
-      apiKey: $<HTMLInputElement>('claude-key').value.trim(),
-    },
+    claude: current.claude,
     password: current.password,
   };
+  const state = getUnlockState(current.password);
+  if (state.kind === 'editing') {
+    current = withEnjoyStarted(current);
+  }
   await setSettings(current);
   flashSaved();
 }
@@ -207,7 +322,7 @@ async function setNewPassword(): Promise<void> {
   const hashed = await hashPassword(plain);
   current = {
     ...current,
-    password: { enabled: true, ...hashed },
+    password: { enabled: true, ...hashed, unlockAt: 0, editExpiresAt: 0, revertAt: 0, guard: null },
   };
   await setSettings(current);
   input.value = '';
@@ -222,7 +337,16 @@ async function changePassword(): Promise<void> {
   if (plain === '') {
     current = {
       ...current,
-      password: { enabled: false, hash: '', salt: '', iterations: 0 },
+      password: {
+        enabled: false,
+        hash: '',
+        salt: '',
+        iterations: 0,
+        unlockAt: 0,
+        editExpiresAt: 0,
+        revertAt: 0,
+        guard: null,
+      },
     };
     await setSettings(current);
     setStatus(status, 'ok', 'Password removed.');
@@ -236,7 +360,7 @@ async function changePassword(): Promise<void> {
   const hashed = await hashPassword(plain);
   current = {
     ...current,
-    password: { enabled: true, ...hashed },
+    password: { enabled: true, ...hashed, unlockAt: 0, editExpiresAt: 0, revertAt: 0, guard: null },
   };
   await setSettings(current);
   input.value = '';
@@ -287,6 +411,10 @@ async function addChannel(kind: Kind): Promise<void> {
 
   const updated = [...listFor(kind), result.channel];
   current = updateList(current, kind, updated);
+  const state = getUnlockState(current.password);
+  if (state.kind === 'editing') {
+    current = withEnjoyStarted(current);
+  }
   await setSettings(current);
   input.value = '';
   setStatus(status, 'ok', `Added ${result.channel.displayName}`);
@@ -296,6 +424,10 @@ async function addChannel(kind: Kind): Promise<void> {
 async function removeChannel(kind: Kind, handle: string): Promise<void> {
   const updated = listFor(kind).filter((c) => c.handle !== handle);
   current = updateList(current, kind, updated);
+  const state = getUnlockState(current.password);
+  if (state.kind === 'editing') {
+    current = withEnjoyStarted(current);
+  }
   await setSettings(current);
   renderList(kind);
 }
