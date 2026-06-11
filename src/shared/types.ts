@@ -23,6 +23,7 @@ export interface UnlockGuard {
   shortFormVideo: { enabled: boolean };
   instagram: { mode: InstagramMode };
   feedFilter: { enabled: boolean };
+  blockedSites: string[];
 }
 
 export interface PasswordLock {
@@ -58,6 +59,7 @@ export interface Settings {
     apiKey: string;
     enabled: boolean;
   };
+  blockedSites: string[];
   password: PasswordLock;
 }
 
@@ -75,6 +77,7 @@ export const DEFAULT_SETTINGS: Settings = {
     apiKey: '',
     enabled: false,
   },
+  blockedSites: [],
   password: {
     enabled: false,
     hash: '',

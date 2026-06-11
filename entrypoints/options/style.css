@@ -313,6 +313,23 @@ code {
   filter: none;
 }
 
+#site-list:empty::before {
+  content: "No websites blocked yet. Add one above.";
+  display: block;
+  padding: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+#site-status.ok {
+  color: var(--ok);
+}
+
+#site-status.error {
+  color: var(--error);
+}
+
 #channel-status.ok {
   color: var(--ok);
 }

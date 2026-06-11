@@ -91,6 +91,32 @@
       </label>
     </section>
 
+    <section id="blocked-sites-section" class="card" style="max-width:640px;margin:24px auto 0;">
+      <h2>Blocked websites</h2>
+      <p class="hint">
+        Block entire websites. Every page on these domains is blanked while
+        the extension is enabled. Adding is always allowed; removing requires
+        the editing window when a password is set.
+      </p>
+
+      <div class="field">
+        <span>Add website</span>
+        <div class="key-row">
+          <input
+            type="text"
+            id="site-input"
+            placeholder="reddit.com"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button type="button" id="site-add">Add</button>
+        </div>
+        <small id="site-status"></small>
+      </div>
+
+      <ul id="site-list" class="channel-list"></ul>
+    </section>
+
     <main id="settings-main" hidden>
       <header>
         <h1>feedblock</h1>

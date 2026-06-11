@@ -44,6 +44,7 @@ const $ = <T extends HTMLElement>(id: string): T => {
 let current: Settings = DEFAULT_SETTINGS;
 let settingsWired = false;
 let claudeWired = false;
+let siteWired = false;
 let tickHandle: ReturnType<typeof setInterval> | null = null;
 
 async function init(): Promise<void> {
@@ -53,10 +54,13 @@ async function init(): Promise<void> {
 
   renderClaude();
   wireClaude();
+  renderSiteSection();
+  wireSiteInput();
 
   onSettingsChanged((s) => {
     current = s;
     renderClaude();
+    renderSiteSection();
     routeScreen();
   });
   routeScreen();
@@ -253,6 +257,87 @@ function channelRow(kind: Kind, channel: AllowlistChannel): HTMLLIElement {
   return li;
 }
 
+function renderSiteSection(): void {
+  const ul = $<HTMLUListElement>('site-list');
+  const state = getUnlockState(current.password);
+  const canRemove = state.kind === 'no-password' || state.kind === 'editing' || state.kind === 'active';
+  ul.replaceChildren(...current.blockedSites.map((d) => siteRow(d, canRemove)));
+}
+
+function siteRow(domain: string, canRemove: boolean): HTMLLIElement {
+  const li = document.createElement('li');
+
+  const info = document.createElement('div');
+  const name = document.createElement('span');
+  name.className = 'name';
+  name.textContent = domain;
+  info.append(name);
+
+  if (canRemove) {
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'Remove';
+    remove.addEventListener('click', () => void removeSite(domain));
+    li.append(info, remove);
+  } else {
+    li.append(info);
+  }
+  return li;
+}
+
+function wireSiteInput(): void {
+  if (siteWired) return;
+  $('site-add').addEventListener('click', () => void addSite());
+  $<HTMLInputElement>('site-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void addSite();
+    }
+  });
+  siteWired = true;
+}
+
+function normalizeDomain(input: string): string | null {
+  let s = input.trim().toLowerCase();
+  s = s.replace(/^https?:\/\//, '');
+  s = s.replace(/^www\./, '');
+  s = s.replace(/[/?#].*$/, '');
+  s = s.replace(/\.$/, '');
+  if (!s || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(s)) {
+    return null;
+  }
+  return s;
+}
+
+async function addSite(): Promise<void> {
+  const input = $<HTMLInputElement>('site-input');
+  const status = $<HTMLElement>('site-status');
+  const domain = normalizeDomain(input.value);
+  if (!domain) {
+    setStatus(status, 'error', 'Enter a domain like reddit.com');
+    return;
+  }
+  if (current.blockedSites.includes(domain)) {
+    setStatus(status, 'error', `${domain} is already blocked`);
+    return;
+  }
+  current = { ...current, blockedSites: [...current.blockedSites, domain] };
+  await setSettings(current);
+  input.value = '';
+  setStatus(status, 'ok', `Blocking ${domain}`);
+  renderSiteSection();
+}
+
+async function removeSite(domain: string): Promise<void> {
+  current = { ...current, blockedSites: current.blockedSites.filter((d) => d !== domain) };
+  const state = getUnlockState(current.password);
+  if (state.kind === 'editing') {
+    current = withEnjoyStarted(current);
+  }
+  await setSettings(current);
+  renderSiteSection();
+}
+
 function wire(): void {
   const immediate = ['enabled', 'shorts-enabled', 'feed-enabled'];
   immediate.forEach((id) => $(id).addEventListener('change', save));
@@ -299,6 +384,7 @@ async function save(): Promise<void> {
       strictness: current.feedFilter.strictness,
     },
     claude: current.claude,
+    blockedSites: current.blockedSites,
     password: current.password,
   };
   const state = getUnlockState(current.password);

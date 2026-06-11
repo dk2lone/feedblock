@@ -13,7 +13,8 @@ const ALARM_REVERT = 'feedblock-revert';
 const SEED_HANDLES = ['khanacademy', 'amoebasisters', 'briancasel'];
 const SEED_FLAG_KEY = 'seedAttempted';
 
-const ACTIVE_HOSTS = ['youtube.com', 'instagram.com'];
+const BUILTIN_HOSTS = ['youtube.com', 'instagram.com'];
+let blockedSites: string[] = [];
 const IDLE_ICON = {
   16: 'icon/16.png',
   32: 'icon/32.png',
@@ -33,7 +34,8 @@ function isActiveHost(url: string | undefined): boolean {
   if (!url) return false;
   try {
     const host = new URL(url).hostname;
-    return ACTIVE_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
+    const all = [...BUILTIN_HOSTS, ...blockedSites];
+    return all.some((h) => host === h || host.endsWith(`.${h}`));
   } catch {
     return false;
   }
@@ -97,9 +99,13 @@ export default defineBackground(() => {
     }
   })();
 
-  // --- Unlock alarms -------------------------------------------------------
+  // --- Blocked sites (for icon) + unlock alarms ----------------------------
+  void getSettings().then((s) => { blockedSites = s.blockedSites; });
+  onSettingsChanged((s) => {
+    blockedSites = s.blockedSites;
+    void syncAlarms();
+  });
   void syncAlarms();
-  onSettingsChanged(() => void syncAlarms());
 
   browser.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === ALARM_UNLOCK) void onUnlockAlarm();

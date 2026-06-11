@@ -39,11 +39,14 @@ async function init(): Promise<void> {
 
   renderClaude();
   wireClaude();
+  renderSiteSection();
+  wireSiteInput();
   void revealChannel();
 
   onSettingsChanged((s) => {
     settings = s;
     renderClaude();
+    renderSiteSection();
     render();
   });
   render();
@@ -405,6 +408,89 @@ function removeFromList(s: Settings, kind: Kind): Settings {
 
 function labelFor(kind: Kind): string {
   return kind === 'allow' ? 'allowlist' : 'blocklist';
+}
+
+// --- Blocked sites (always accessible) ------------------------------------
+
+let siteWired = false;
+
+function renderSiteSection(): void {
+  const ul = $<HTMLUListElement>('site-list');
+  const state = getUnlockState(settings.password);
+  const canRemove = state.kind === 'no-password' || state.kind === 'editing' || state.kind === 'active';
+  ul.replaceChildren(...settings.blockedSites.map((d) => siteRow(d, canRemove)));
+}
+
+function siteRow(domain: string, canRemove: boolean): HTMLLIElement {
+  const li = document.createElement('li');
+  const span = document.createElement('span');
+  span.className = 'domain';
+  span.textContent = domain;
+  li.append(span);
+  if (canRemove) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Remove';
+    btn.addEventListener('click', () => void removeSite(domain));
+    li.append(btn);
+  }
+  return li;
+}
+
+function wireSiteInput(): void {
+  if (siteWired) return;
+  $('site-add').addEventListener('click', () => void addSite());
+  $<HTMLInputElement>('site-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void addSite();
+    }
+  });
+  siteWired = true;
+}
+
+function normalizeDomain(input: string): string | null {
+  let s = input.trim().toLowerCase();
+  s = s.replace(/^https?:\/\//, '');
+  s = s.replace(/^www\./, '');
+  s = s.replace(/[/?#].*$/, '');
+  s = s.replace(/\.$/, '');
+  if (!s || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(s)) {
+    return null;
+  }
+  return s;
+}
+
+function setStatusText(el: HTMLElement, cls: '' | 'ok' | 'error', msg: string): void {
+  el.textContent = msg;
+  el.className = cls;
+}
+
+async function addSite(): Promise<void> {
+  const input = $<HTMLInputElement>('site-input');
+  const status = $<HTMLElement>('site-status');
+  const domain = normalizeDomain(input.value);
+  if (!domain) {
+    setStatusText(status, 'error', 'Enter a domain like reddit.com');
+    return;
+  }
+  if (settings.blockedSites.includes(domain)) {
+    setStatusText(status, 'error', `${domain} is already blocked`);
+    return;
+  }
+  settings = { ...settings, blockedSites: [...settings.blockedSites, domain] };
+  await setSettings(settings);
+  input.value = '';
+  setStatusText(status, 'ok', `Blocking ${domain}`);
+  renderSiteSection();
+}
+
+async function removeSite(domain: string): Promise<void> {
+  settings = { ...settings, blockedSites: settings.blockedSites.filter((d) => d !== domain) };
+  const state = getUnlockState(settings.password);
+  if (state.kind === 'editing') settings = withEnjoyStarted(settings);
+  await setSettings(settings);
+  renderSiteSection();
 }
 
 void init();

@@ -49,6 +49,7 @@ export function withCooldownStarted(settings: Settings, now = Date.now()): Setti
     shortFormVideo: { enabled: settings.shortFormVideo.enabled },
     instagram: { mode: settings.instagram.mode },
     feedFilter: { enabled: settings.feedFilter.enabled },
+    blockedSites: [...settings.blockedSites],
   };
   const unlockAt = now + COOLDOWN_MS;
   return {
@@ -123,6 +124,7 @@ export function withGuardRestored(settings: Settings): Settings {
     shortFormVideo: { enabled: guard.shortFormVideo.enabled },
     instagram: { mode: guard.instagram.mode },
     feedFilter: { ...settings.feedFilter, enabled: guard.feedFilter.enabled },
+    blockedSites: guard.blockedSites ?? settings.blockedSites,
     password: cleared,
   };
 }

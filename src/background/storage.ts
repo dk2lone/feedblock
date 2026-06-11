@@ -23,6 +23,7 @@ type PartialSettings = {
     blocklist?: RawChannelList;
   };
   claude?: Partial<Settings['claude']>;
+  blockedSites?: unknown[];
   password?: Partial<PasswordLock>;
 };
 
@@ -80,6 +81,7 @@ function merge(defaults: Settings, partial: PartialSettings): Settings {
         partial.feedFilter?.strictness ?? defaults.feedFilter.strictness,
     },
     claude: { ...defaults.claude, ...partial.claude },
+    blockedSites: normalizeBlockedSites(partial.blockedSites),
     password: mergePassword(defaults.password, partial.password),
   };
 }
@@ -119,6 +121,11 @@ function resolveInstagramMode(
     return stored;
   }
   return sfvEnabled ? 'partial' : 'off';
+}
+
+function normalizeBlockedSites(raw: unknown[] | undefined): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((s): s is string => typeof s === 'string' && s.length > 0);
 }
 
 function normalizeChannelList(raw: RawChannelList): AllowlistChannel[] {

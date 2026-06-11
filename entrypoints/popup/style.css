@@ -92,6 +92,7 @@ section:last-of-type {
   cursor: pointer;
 }
 
+.sites h2,
 .channel h2 {
   margin: 0 0 8px;
   font-size: 11px;
@@ -255,4 +256,89 @@ section:last-of-type {
 .window-banner strong {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--text);
+}
+
+.site-add-row {
+  display: flex;
+  gap: 6px;
+}
+
+.site-add-row input {
+  flex: 1;
+  padding: 6px 8px;
+  font: inherit;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.site-add-row button {
+  padding: 6px 12px;
+  font: inherit;
+  font-weight: 500;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#site-status {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  min-height: 14px;
+  color: var(--muted);
+}
+
+#site-status.ok {
+  color: var(--ok);
+}
+
+#site-status.error {
+  color: var(--error);
+}
+
+#site-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+#site-list:empty {
+  display: none;
+}
+
+#site-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+}
+
+#site-list li:first-child {
+  border-top: none;
+}
+
+#site-list .domain {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#site-list button {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+#site-list button:hover {
+  color: var(--error);
 }
