@@ -65,12 +65,16 @@ async function init(): Promise<void> {
 
 function routeScreen(): void {
   const state = getUnlockState(current.password);
-  if (state.kind === 'no-password' || state.kind === 'editing') {
-    showSettings(state.kind === 'editing' ? state.editExpiresAt : null);
+  if (state.kind === 'no-password') {
+    showSettings(null, null);
+    return;
+  }
+  if (state.kind === 'editing') {
+    showSettings(state.editExpiresAt, null);
     return;
   }
   if (state.kind === 'active') {
-    showActive(state.revertAt);
+    showSettings(null, state.revertAt);
     return;
   }
   if (state.kind === 'cooldown') {
@@ -100,23 +104,17 @@ function showCooldown(unlockAt: number): void {
   $('cooldown-countdown').textContent = formatRemaining(unlockAt - Date.now());
 }
 
-function showActive(revertAt: number): void {
-  $('lock-screen').hidden = true;
-  $('cooldown-screen').hidden = true;
-  $('editing-banner').hidden = true;
-  $('active-banner').hidden = false;
-  $('settings-main').hidden = true;
-  $('active-countdown').textContent = formatRemaining(revertAt - Date.now());
-}
-
-function showSettings(editExpiresAt: number | null): void {
+function showSettings(editExpiresAt: number | null, revertAt: number | null): void {
   $('lock-screen').hidden = true;
   $('cooldown-screen').hidden = true;
   $('editing-banner').hidden = editExpiresAt === null;
-  $('active-banner').hidden = true;
+  $('active-banner').hidden = revertAt === null;
   $('settings-main').hidden = false;
   if (editExpiresAt !== null) {
     $('editing-countdown').textContent = formatRemaining(editExpiresAt - Date.now());
+  }
+  if (revertAt !== null) {
+    $('active-countdown').textContent = formatRemaining(revertAt - Date.now());
   }
   render();
   if (!settingsWired) {

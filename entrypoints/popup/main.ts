@@ -39,6 +39,7 @@ async function init(): Promise<void> {
 
   renderClaude();
   wireClaude();
+  void revealChannel();
 
   onSettingsChanged((s) => {
     settings = s;
@@ -77,7 +78,6 @@ function hideAll(): void {
   $('editing-section').hidden = true;
   $('active-section').hidden = true;
   $('toggles-section').hidden = true;
-  $('channel-section').hidden = true;
 }
 
 function showLocked(): void {
@@ -102,17 +102,12 @@ function showEditing(editExpiresAt: number): void {
   hideAll();
   $('editing-section').hidden = false;
   $('toggles-section').hidden = false;
-  $('channel-section').hidden = false;
   $('editing-countdown').textContent = formatRemaining(editExpiresAt - Date.now());
   if (renderedPhase !== 'editing') {
     renderToggles();
     if (!togglesWired) {
       wireToggles();
       togglesWired = true;
-    }
-    if (!channelWired) {
-      void revealChannel();
-      channelWired = true;
     }
   }
   renderedPhase = 'editing';
@@ -121,23 +116,26 @@ function showEditing(editExpiresAt: number): void {
 function showActive(revertAt: number): void {
   hideAll();
   $('active-section').hidden = false;
+  $('toggles-section').hidden = false;
   $('active-countdown').textContent = formatRemaining(revertAt - Date.now());
+  if (renderedPhase !== 'active') {
+    renderToggles();
+    if (!togglesWired) {
+      wireToggles();
+      togglesWired = true;
+    }
+  }
   renderedPhase = 'active';
 }
 
 function showOpen(): void {
   hideAll();
   $('toggles-section').hidden = false;
-  $('channel-section').hidden = false;
   if (renderedPhase !== 'open') {
     renderToggles();
     if (!togglesWired) {
       wireToggles();
       togglesWired = true;
-    }
-    if (!channelWired) {
-      void revealChannel();
-      channelWired = true;
     }
   }
   renderedPhase = 'open';
