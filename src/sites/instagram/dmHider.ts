@@ -58,8 +58,9 @@ function nameMatch(text: string): boolean {
 function ownText(el: Element): string {
   let t = '';
   for (let i = 0; i < el.childNodes.length; i++) {
-    if (el.childNodes[i].nodeType === Node.TEXT_NODE) {
-      t += el.childNodes[i].textContent || '';
+    const node = el.childNodes[i];
+    if (node && node.nodeType === Node.TEXT_NODE) {
+      t += node.textContent || '';
     }
   }
   return t;
@@ -83,16 +84,11 @@ function scan(): void {
 // ── 1. The "Messages" floating bubble at bottom-right of home page ──
 
 function hideMessagesBubble(): void {
-  // Find the floating "Messages" pill at the bottom-right of the page.
-  // It has a span saying "Messages" + profile avatar <img> tags.
-  // Do NOT hide the "Messages" link in the left sidebar nav.
   const spans = document.querySelectorAll('span');
   for (let i = 0; i < spans.length; i++) {
-    const span = spans[i];
+    const span = spans[i]!;
     if (span.closest('[data-fb-dmh]')) continue;
     if (ownText(span).trim() !== 'Messages') continue;
-
-    // Skip if this is inside a nav link (sidebar)
     if (span.closest('a, nav')) continue;
 
     // The floating bubble must have avatar <img> tags nearby
@@ -130,16 +126,14 @@ function hideMessagesBubble(): void {
 function hideInboxRows(): void {
   const spans = document.querySelectorAll('span');
   for (let i = 0; i < spans.length; i++) {
-    const span = spans[i];
+    const span = spans[i]!;
     if (span.closest('[data-fb-dmh]')) continue;
     const text = ownText(span);
     if (!nameMatch(text)) continue;
 
-    // Walk up to find the conversation row: the ancestor whose parent
-    // has 3+ children (meaning it's a list of conversation items)
     let current: HTMLElement | null = span;
     for (let d = 0; d < 20 && current; d++) {
-      const parent = current.parentElement;
+      const parent: HTMLElement | null = current.parentElement;
       if (!parent || parent === document.body) break;
       if (parent.children.length >= 3) {
         current.setAttribute('data-fb-dmh', '');

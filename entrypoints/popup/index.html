@@ -12,63 +12,6 @@
       <button type="button" id="open-options" class="link">Settings →</button>
     </header>
 
-    <section id="lock-section" class="lock" hidden>
-      <p class="lock-title">Locked</p>
-      <form id="unlock-form" class="unlock-form">
-        <input
-          type="password"
-          id="unlock-password"
-          placeholder="Password"
-          autocomplete="current-password"
-          spellcheck="false"
-        />
-        <button type="submit" id="unlock-submit">Unlock</button>
-      </form>
-      <small id="unlock-status" class="status" hidden></small>
-      <small class="lock-hint">15-min cooldown, then 1 min to change settings.</small>
-    </section>
-
-    <section id="cooldown-section" class="lock" hidden>
-      <p class="lock-title">Cooling down…</p>
-      <p class="countdown" id="cooldown-countdown">15:00</p>
-      <small class="lock-hint">
-        You'll get a notification and 1 minute to change settings.
-      </small>
-      <button type="button" id="cooldown-cancel" class="cancel-btn">
-        Cancel
-      </button>
-    </section>
-
-    <section id="editing-section" class="lock" hidden>
-      <p class="lock-title">Editing window open</p>
-      <p class="countdown" id="editing-countdown">1:00</p>
-      <small class="lock-hint">
-        Make your changes now. Window closes when the timer ends.
-      </small>
-    </section>
-
-    <section id="active-section" class="window-banner" hidden>
-      <span>Changes revert in <strong id="active-countdown">30:00</strong></span>
-    </section>
-
-    <section id="claude-section" class="toggles">
-      <label class="toggle">
-        <span>Use Claude</span>
-        <input type="checkbox" id="claude-enabled" />
-      </label>
-    </section>
-
-    <section id="toggles-section" class="toggles" hidden>
-      <label class="toggle">
-        <span>Extension on</span>
-        <input type="checkbox" id="enabled" />
-      </label>
-      <label class="toggle">
-        <span>Filter feed</span>
-        <input type="checkbox" id="feed-enabled" />
-      </label>
-    </section>
-
     <section id="sites-section" class="sites">
       <h2>Blocked websites</h2>
       <div class="site-add-row">
@@ -85,7 +28,7 @@
       <ul id="site-list"></ul>
     </section>
 
-    <section id="dm-section" class="dm-contacts">
+    <section id="dm-section" class="dm-contacts" hidden>
       <h2>Hidden Instagram DMs</h2>
       <div class="site-add-row">
         <input
@@ -101,7 +44,7 @@
       <ul id="dm-list"></ul>
     </section>
 
-    <section id="channel-section" class="channel">
+    <section id="channel-section" class="channel" hidden>
       <h2>This channel</h2>
       <div id="channel-empty" class="empty">
         Open a video or channel page on YouTube to add it to a list.
