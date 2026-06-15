@@ -198,6 +198,33 @@
       </section>
 
       <section class="card">
+        <h2>Hidden Instagram DMs</h2>
+        <p class="hint">
+          Hide conversations from specific people in your Instagram DMs.
+          Their messages won't show in your inbox and you won't be able to
+          reply — without actually blocking them on Instagram. Matching is
+          case-insensitive on display name or username.
+        </p>
+
+        <div class="field">
+          <span>Add contact to hide</span>
+          <div class="key-row">
+            <input
+              type="text"
+              id="dm-contact-input"
+              placeholder="cindy"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="button" id="dm-contact-add">Add</button>
+          </div>
+          <small id="dm-contact-status"></small>
+        </div>
+
+        <ul id="dm-contact-list" class="channel-list"></ul>
+      </section>
+
+      <section class="card">
         <h2>Feed filter</h2>
         <label class="row">
           <span>

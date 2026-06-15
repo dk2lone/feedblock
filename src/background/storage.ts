@@ -24,6 +24,7 @@ type PartialSettings = {
   };
   claude?: Partial<Settings['claude']>;
   blockedSites?: unknown[];
+  hiddenDmContacts?: unknown[];
   password?: Partial<PasswordLock>;
 };
 
@@ -82,6 +83,7 @@ function merge(defaults: Settings, partial: PartialSettings): Settings {
     },
     claude: { ...defaults.claude, ...partial.claude },
     blockedSites: normalizeBlockedSites(partial.blockedSites),
+    hiddenDmContacts: normalizeStringList(partial.hiddenDmContacts),
     password: mergePassword(defaults.password, partial.password),
   };
 }
@@ -126,6 +128,13 @@ function resolveInstagramMode(
 function normalizeBlockedSites(raw: unknown[] | undefined): string[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter((s): s is string => typeof s === 'string' && s.length > 0);
+}
+
+function normalizeStringList(raw: unknown[] | undefined): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((s) => (typeof s === 'string' ? s.trim().toLowerCase() : ''))
+    .filter((s) => s.length > 0);
 }
 
 function normalizeChannelList(raw: RawChannelList): AllowlistChannel[] {

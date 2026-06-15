@@ -2,7 +2,7 @@
 
 Open-source browser extension that blanks the YouTube and Instagram feeds — Shorts, Reels, Explore, and non-educational videos. Local-first — no backend, no telemetry. Optional LLM classifier uses your own Claude API key.
 
-**Status:** v0.0.1 — YouTube Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, Claude classifier, Instagram blocker (Off / Partial / Full modes), password lock with timed unlock, and per-tab toolbar icon all shipped. Verified in Safari and Chrome.
+**Status:** v0.0.1 — YouTube Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, Claude classifier, Instagram blocker (Off / Partial / Full modes), hidden Instagram DM contacts, password lock with timed unlock, blocked websites, and per-tab toolbar icon all shipped. Verified in Safari and Chrome.
 
 ## What it does today
 
@@ -41,6 +41,14 @@ Open-source browser extension that blanks the YouTube and Instagram feeds — Sh
 
 **Toolbar icon:**
 - Angry-bird icon switches per tab — happy bird on YouTube/Instagram, sad bird elsewhere
+
+**Hidden Instagram DMs:**
+- Hide specific Instagram contacts from the DM inbox sidebar — their conversation row disappears
+- Hides the reply textbox and call/video buttons so you can't message them (but you can still read their messages)
+- Hides the floating "Messages" chat bubble on the Instagram home page
+- Works in the full DM page (`/direct/t/…`), the mini chat popup, and the inbox sidebar
+- Add/remove contacts from the toolbar popup or Options page — just type an `@handle`
+- Does **not** block the person on Instagram — they can still message you, you just can't see the convo row or reply
 
 **Bonus:** Search-history dropdown entries (the ones with the × Remove button) are hidden in the YouTube searchbar. Predictive typeahead is left alone.
 
