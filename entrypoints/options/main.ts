@@ -45,6 +45,7 @@ let current: Settings = DEFAULT_SETTINGS;
 let settingsWired = false;
 let claudeWired = false;
 let siteWired = false;
+let dmWired = false;
 let tickHandle: ReturnType<typeof setInterval> | null = null;
 
 async function init(): Promise<void> {
@@ -56,11 +57,14 @@ async function init(): Promise<void> {
   wireClaude();
   renderSiteSection();
   wireSiteInput();
+  renderDmSection();
+  wireDmInput();
 
   onSettingsChanged((s) => {
     current = s;
     renderClaude();
     renderSiteSection();
+    renderDmSection();
     routeScreen();
   });
   routeScreen();
@@ -210,6 +214,7 @@ function render(): void {
   $<HTMLInputElement>(`ig-${current.instagram.mode}`).checked = true;
   renderList('allow');
   renderList('block');
+  renderDmSection();
   renderPasswordSection();
 }
 
@@ -338,6 +343,67 @@ async function removeSite(domain: string): Promise<void> {
   renderSiteSection();
 }
 
+// --- Hidden DM contacts -----------------------------------------------------
+
+function renderDmSection(): void {
+  const ul = $<HTMLUListElement>('dm-contact-list');
+  ul.replaceChildren(...current.hiddenDmContacts.map((name) => dmContactRow(name)));
+}
+
+function dmContactRow(name: string): HTMLLIElement {
+  const li = document.createElement('li');
+  const info = document.createElement('div');
+  const span = document.createElement('span');
+  span.className = 'name';
+  span.textContent = name;
+  info.append(span);
+
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.textContent = 'Remove';
+  remove.addEventListener('click', () => void removeDmContact(name));
+
+  li.append(info, remove);
+  return li;
+}
+
+function wireDmInput(): void {
+  if (dmWired) return;
+  $('dm-contact-add').addEventListener('click', () => void addDmContact());
+  $<HTMLInputElement>('dm-contact-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void addDmContact();
+    }
+  });
+  dmWired = true;
+}
+
+async function addDmContact(): Promise<void> {
+  const input = $<HTMLInputElement>('dm-contact-input');
+  const status = $<HTMLElement>('dm-contact-status');
+  const name = input.value.trim().toLowerCase();
+  if (!name) {
+    setStatus(status, 'error', 'Enter a name or username');
+    return;
+  }
+  if (current.hiddenDmContacts.includes(name)) {
+    setStatus(status, 'error', `${name} is already hidden`);
+    return;
+  }
+  current = { ...current, hiddenDmContacts: [...current.hiddenDmContacts, name] };
+  await setSettings(current);
+  input.value = '';
+  setStatus(status, 'ok', `Hiding DMs from ${name}`);
+  renderDmSection();
+}
+
+async function removeDmContact(name: string): Promise<void> {
+  current = { ...current, hiddenDmContacts: current.hiddenDmContacts.filter((n) => n !== name) };
+  await setSettings(current);
+  renderDmSection();
+}
+
 function wire(): void {
   const immediate = ['enabled', 'shorts-enabled', 'feed-enabled'];
   immediate.forEach((id) => $(id).addEventListener('change', save));
@@ -385,6 +451,7 @@ async function save(): Promise<void> {
     },
     claude: current.claude,
     blockedSites: current.blockedSites,
+    hiddenDmContacts: current.hiddenDmContacts,
     password: current.password,
   };
   const state = getUnlockState(current.password);

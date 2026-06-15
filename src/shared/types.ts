@@ -60,6 +60,7 @@ export interface Settings {
     enabled: boolean;
   };
   blockedSites: string[];
+  hiddenDmContacts: string[];
   password: PasswordLock;
 }
 
@@ -78,6 +79,7 @@ export const DEFAULT_SETTINGS: Settings = {
     enabled: false,
   },
   blockedSites: [],
+  hiddenDmContacts: [],
   password: {
     enabled: false,
     hash: '',

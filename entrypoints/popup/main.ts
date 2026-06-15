@@ -21,6 +21,7 @@ let renderedPhase: string | null = null;
 let togglesWired = false;
 let claudeWired = false;
 let channelWired = false;
+let dmWired = false;
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -41,12 +42,15 @@ async function init(): Promise<void> {
   wireClaude();
   renderSiteSection();
   wireSiteInput();
+  renderDmSection();
+  wireDmInput();
   void revealChannel();
 
   onSettingsChanged((s) => {
     settings = s;
     renderClaude();
     renderSiteSection();
+    renderDmSection();
     render();
   });
   render();
@@ -491,6 +495,64 @@ async function removeSite(domain: string): Promise<void> {
   if (state.kind === 'editing') settings = withEnjoyStarted(settings);
   await setSettings(settings);
   renderSiteSection();
+}
+
+// --- Hidden DM contacts (always accessible) ---------------------------------
+
+function renderDmSection(): void {
+  const ul = $<HTMLUListElement>('dm-list');
+  ul.replaceChildren(...settings.hiddenDmContacts.map((name) => dmRow(name)));
+}
+
+function dmRow(name: string): HTMLLIElement {
+  const li = document.createElement('li');
+  const span = document.createElement('span');
+  span.className = 'dm-name';
+  span.textContent = name;
+  li.append(span);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = 'Remove';
+  btn.addEventListener('click', () => void removeDmContact(name));
+  li.append(btn);
+  return li;
+}
+
+function wireDmInput(): void {
+  if (dmWired) return;
+  $('dm-add').addEventListener('click', () => void addDmContact());
+  $<HTMLInputElement>('dm-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void addDmContact();
+    }
+  });
+  dmWired = true;
+}
+
+async function addDmContact(): Promise<void> {
+  const input = $<HTMLInputElement>('dm-input');
+  const status = $<HTMLElement>('dm-status');
+  const raw = input.value.trim().replace(/^@/, '').toLowerCase();
+  if (!raw) {
+    setStatusText(status, 'error', 'Enter a username like @cindy.zkx');
+    return;
+  }
+  if (settings.hiddenDmContacts.includes(raw)) {
+    setStatusText(status, 'error', `${raw} is already hidden`);
+    return;
+  }
+  settings = { ...settings, hiddenDmContacts: [...settings.hiddenDmContacts, raw] };
+  await setSettings(settings);
+  input.value = '';
+  setStatusText(status, 'ok', `Hiding DMs from ${raw}`);
+  renderDmSection();
+}
+
+async function removeDmContact(name: string): Promise<void> {
+  settings = { ...settings, hiddenDmContacts: settings.hiddenDmContacts.filter((n) => n !== name) };
+  await setSettings(settings);
+  renderDmSection();
 }
 
 void init();

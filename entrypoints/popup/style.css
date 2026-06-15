@@ -93,7 +93,8 @@ section:last-of-type {
 }
 
 .sites h2,
-.channel h2 {
+.channel h2,
+.dm-contacts h2 {
   margin: 0 0 8px;
   font-size: 11px;
   font-weight: 600;
@@ -340,5 +341,64 @@ section:last-of-type {
 }
 
 #site-list button:hover {
+  color: var(--error);
+}
+
+#dm-status {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  min-height: 14px;
+  color: var(--muted);
+}
+
+#dm-status.ok {
+  color: var(--ok);
+}
+
+#dm-status.error {
+  color: var(--error);
+}
+
+#dm-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+#dm-list:empty {
+  display: none;
+}
+
+#dm-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+}
+
+#dm-list li:first-child {
+  border-top: none;
+}
+
+#dm-list .dm-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#dm-list button {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+#dm-list button:hover {
   color: var(--error);
 }

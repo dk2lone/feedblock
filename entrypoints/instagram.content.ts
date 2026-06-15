@@ -4,6 +4,10 @@ import {
   installInstagramBlocker,
   uninstallInstagramBlocker,
 } from '@/src/sites/instagram/blocker';
+import {
+  installDmHider,
+  uninstallDmHider,
+} from '@/src/sites/instagram/dmHider';
 import type { Settings } from '@/src/shared/types';
 
 export default defineContentScript({
@@ -23,7 +27,13 @@ export default defineContentScript({
 function apply(settings: Settings): void {
   if (!settings.enabled || settings.instagram.mode === 'off') {
     uninstallInstagramBlocker();
+    uninstallDmHider();
     return;
   }
   installInstagramBlocker(settings.instagram.mode);
+  if (settings.hiddenDmContacts.length > 0) {
+    installDmHider(settings.hiddenDmContacts);
+  } else {
+    uninstallDmHider();
+  }
 }
