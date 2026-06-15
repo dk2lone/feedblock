@@ -1,13 +1,5 @@
 import { browser } from 'wxt/browser';
 import { getSettings, onSettingsChanged, setSettings } from '@/src/background/storage';
-import { verifyPassword } from '@/src/shared/password';
-import {
-  formatRemaining,
-  getUnlockState,
-  withCooldownStarted,
-  withEnjoyStarted,
-  withUnlockCancelled,
-} from '@/src/shared/unlockState';
 import { resolveHandle } from '@/src/sites/youtube/channelResolver';
 import type { AllowlistChannel, Settings } from '@/src/shared/types';
 import type { DetectedChannel } from '@/entrypoints/youtube.content';
@@ -16,12 +8,11 @@ type Kind = 'allow' | 'block';
 
 let settings: Settings;
 let detected: DetectedChannel | null = null;
-let tickHandle: ReturnType<typeof setInterval> | null = null;
-let renderedPhase: string | null = null;
-let togglesWired = false;
-let claudeWired = false;
 let channelWired = false;
 let dmWired = false;
+let siteWired = false;
+let onYouTube = false;
+let onInstagram = false;
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -35,213 +26,168 @@ async function init(): Promise<void> {
     void browser.runtime.openOptionsPage();
     window.close();
   });
-  $('unlock-form').addEventListener('submit', (e) => void onUnlockSubmit(e));
-  $('cooldown-cancel').addEventListener('click', () => void onCancel());
 
-  renderClaude();
-  wireClaude();
+  // Detect active tab to show context-aware sections
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+  const url = tabs[0]?.url ?? '';
+  onYouTube = /^https?:\/\/(www\.)?youtube\.com\//.test(url);
+  onInstagram = /^https?:\/\/(www\.)?instagram\.com\//.test(url);
+
   renderSiteSection();
   wireSiteInput();
-  renderDmSection();
-  wireDmInput();
-  void revealChannel();
+
+  if (onInstagram) {
+    $('dm-section').hidden = false;
+    renderDmSection();
+    wireDmInput();
+  }
+
+  if (onYouTube) {
+    $('channel-section').hidden = false;
+    void revealChannel();
+  }
 
   onSettingsChanged((s) => {
     settings = s;
-    renderClaude();
     renderSiteSection();
-    renderDmSection();
-    render();
-  });
-  render();
-  startTicker();
-}
-
-function render(): void {
-  const state = getUnlockState(settings.password);
-
-  if (state.kind === 'no-password') {
-    showOpen();
-    return;
-  }
-  if (state.kind === 'editing') {
-    showEditing(state.editExpiresAt);
-    return;
-  }
-  if (state.kind === 'active') {
-    showActive(state.revertAt);
-    return;
-  }
-  if (state.kind === 'cooldown') {
-    showCooldown(state.unlockAt);
-    return;
-  }
-  showLocked();
-}
-
-function hideAll(): void {
-  $('lock-section').hidden = true;
-  $('cooldown-section').hidden = true;
-  $('editing-section').hidden = true;
-  $('active-section').hidden = true;
-  $('toggles-section').hidden = true;
-}
-
-function showLocked(): void {
-  hideAll();
-  $('lock-section').hidden = false;
-  if (renderedPhase !== 'locked') {
-    $<HTMLInputElement>('unlock-password').value = '';
-    $('unlock-status').hidden = true;
-    $<HTMLInputElement>('unlock-password').focus();
-  }
-  renderedPhase = 'locked';
-}
-
-function showCooldown(unlockAt: number): void {
-  hideAll();
-  $('cooldown-section').hidden = false;
-  $('cooldown-countdown').textContent = formatRemaining(unlockAt - Date.now());
-  renderedPhase = 'cooldown';
-}
-
-function showEditing(editExpiresAt: number): void {
-  hideAll();
-  $('editing-section').hidden = false;
-  $('toggles-section').hidden = false;
-  $('editing-countdown').textContent = formatRemaining(editExpiresAt - Date.now());
-  if (renderedPhase !== 'editing') {
-    renderToggles();
-    if (!togglesWired) {
-      wireToggles();
-      togglesWired = true;
-    }
-  }
-  renderedPhase = 'editing';
-}
-
-function showActive(revertAt: number): void {
-  hideAll();
-  $('active-section').hidden = false;
-  $('toggles-section').hidden = false;
-  $('active-countdown').textContent = formatRemaining(revertAt - Date.now());
-  if (renderedPhase !== 'active') {
-    renderToggles();
-    if (!togglesWired) {
-      wireToggles();
-      togglesWired = true;
-    }
-  }
-  renderedPhase = 'active';
-}
-
-function showOpen(): void {
-  hideAll();
-  $('toggles-section').hidden = false;
-  if (renderedPhase !== 'open') {
-    renderToggles();
-    if (!togglesWired) {
-      wireToggles();
-      togglesWired = true;
-    }
-  }
-  renderedPhase = 'open';
-}
-
-function startTicker(): void {
-  if (tickHandle) clearInterval(tickHandle);
-  tickHandle = setInterval(() => {
-    const state = getUnlockState(settings.password);
-    if (state.kind === 'cooldown') {
-      $('cooldown-countdown').textContent = formatRemaining(state.unlockAt - Date.now());
-      if (Date.now() >= state.unlockAt) render();
-      return;
-    }
-    if (state.kind === 'editing') {
-      $('editing-countdown').textContent = formatRemaining(state.editExpiresAt - Date.now());
-      if (Date.now() >= state.editExpiresAt) render();
-      return;
-    }
-    if (state.kind === 'active') {
-      $('active-countdown').textContent = formatRemaining(state.revertAt - Date.now());
-      if (Date.now() >= state.revertAt) render();
-      return;
-    }
-  }, 1000);
-}
-
-async function onUnlockSubmit(e: Event): Promise<void> {
-  e.preventDefault();
-  const input = $<HTMLInputElement>('unlock-password');
-  const status = $('unlock-status');
-  const button = $<HTMLButtonElement>('unlock-submit');
-  button.disabled = true;
-  status.hidden = true;
-  const ok = await verifyPassword(input.value, settings.password);
-  button.disabled = false;
-  if (!ok) {
-    status.textContent = 'Incorrect password.';
-    status.className = 'status error';
-    status.hidden = false;
-    input.select();
-    return;
-  }
-  settings = withCooldownStarted(settings);
-  await setSettings(settings);
-  render();
-}
-
-async function onCancel(): Promise<void> {
-  settings = withUnlockCancelled(settings);
-  await setSettings(settings);
-  render();
-}
-
-function renderClaude(): void {
-  $<HTMLInputElement>('claude-enabled').checked = settings.claude.enabled;
-}
-
-function wireClaude(): void {
-  if (claudeWired) return;
-  $('claude-enabled').addEventListener('change', () => void saveClaude());
-  claudeWired = true;
-}
-
-async function saveClaude(): Promise<void> {
-  settings = {
-    ...settings,
-    claude: { ...settings.claude, enabled: $<HTMLInputElement>('claude-enabled').checked },
-  };
-  await setSettings(settings);
-}
-
-function renderToggles(): void {
-  $<HTMLInputElement>('enabled').checked = settings.enabled;
-  $<HTMLInputElement>('feed-enabled').checked = settings.feedFilter.enabled;
-}
-
-function wireToggles(): void {
-  ['enabled', 'feed-enabled'].forEach((id) => {
-    $(id).addEventListener('change', () => void saveToggles());
+    if (onInstagram) renderDmSection();
   });
 }
 
-async function saveToggles(): Promise<void> {
-  // If we're in the editing window and user makes a change, start the 30-min enjoy period.
-  const state = getUnlockState(settings.password);
-  settings = {
-    ...settings,
-    enabled: $<HTMLInputElement>('enabled').checked,
-    feedFilter: {
-      ...settings.feedFilter,
-      enabled: $<HTMLInputElement>('feed-enabled').checked,
-    },
-  };
-  if (state.kind === 'editing') {
-    settings = withEnjoyStarted(settings);
-  }
-  await setSettings(settings);
+// --- Blocked sites (always visible) ------------------------------------------
+
+function renderSiteSection(): void {
+  const ul = $<HTMLUListElement>('site-list');
+  ul.replaceChildren(...settings.blockedSites.map((d) => siteRow(d)));
 }
+
+function siteRow(domain: string): HTMLLIElement {
+  const li = document.createElement('li');
+  const span = document.createElement('span');
+  span.className = 'domain';
+  span.textContent = domain;
+  li.append(span);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = 'Remove';
+  btn.addEventListener('click', () => void removeSite(domain));
+  li.append(btn);
+  return li;
+}
+
+function wireSiteInput(): void {
+  if (siteWired) return;
+  $('site-add').addEventListener('click', () => void addSite());
+  $<HTMLInputElement>('site-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void addSite();
+    }
+  });
+  siteWired = true;
+}
+
+function normalizeDomain(input: string): string | null {
+  let s = input.trim().toLowerCase();
+  s = s.replace(/^https?:\/\//, '');
+  s = s.replace(/^www\./, '');
+  s = s.replace(/[/?#].*$/, '');
+  s = s.replace(/\.$/, '');
+  if (!s || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(s)) {
+    return null;
+  }
+  return s;
+}
+
+function setStatusText(el: HTMLElement, cls: '' | 'ok' | 'error', msg: string): void {
+  el.textContent = msg;
+  el.className = cls;
+}
+
+async function addSite(): Promise<void> {
+  const input = $<HTMLInputElement>('site-input');
+  const status = $<HTMLElement>('site-status');
+  const domain = normalizeDomain(input.value);
+  if (!domain) {
+    setStatusText(status, 'error', 'Enter a domain like reddit.com');
+    return;
+  }
+  if (settings.blockedSites.includes(domain)) {
+    setStatusText(status, 'error', `${domain} is already blocked`);
+    return;
+  }
+  settings = { ...settings, blockedSites: [...settings.blockedSites, domain] };
+  await setSettings(settings);
+  input.value = '';
+  setStatusText(status, 'ok', `Blocking ${domain}`);
+  renderSiteSection();
+}
+
+async function removeSite(domain: string): Promise<void> {
+  settings = { ...settings, blockedSites: settings.blockedSites.filter((d) => d !== domain) };
+  await setSettings(settings);
+  renderSiteSection();
+}
+
+// --- Hidden DM contacts (shown on Instagram) ---------------------------------
+
+function renderDmSection(): void {
+  const ul = $<HTMLUListElement>('dm-list');
+  ul.replaceChildren(...settings.hiddenDmContacts.map((name) => dmRow(name)));
+}
+
+function dmRow(name: string): HTMLLIElement {
+  const li = document.createElement('li');
+  const span = document.createElement('span');
+  span.className = 'dm-name';
+  span.textContent = name;
+  li.append(span);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = 'Remove';
+  btn.addEventListener('click', () => void removeDmContact(name));
+  li.append(btn);
+  return li;
+}
+
+function wireDmInput(): void {
+  if (dmWired) return;
+  $('dm-add').addEventListener('click', () => void addDmContact());
+  $<HTMLInputElement>('dm-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void addDmContact();
+    }
+  });
+  dmWired = true;
+}
+
+async function addDmContact(): Promise<void> {
+  const input = $<HTMLInputElement>('dm-input');
+  const status = $<HTMLElement>('dm-status');
+  const raw = input.value.trim().replace(/^@/, '').toLowerCase();
+  if (!raw) {
+    setStatusText(status, 'error', 'Enter a username like @cindy.zkx');
+    return;
+  }
+  if (settings.hiddenDmContacts.includes(raw)) {
+    setStatusText(status, 'error', `${raw} is already hidden`);
+    return;
+  }
+  settings = { ...settings, hiddenDmContacts: [...settings.hiddenDmContacts, raw] };
+  await setSettings(settings);
+  input.value = '';
+  setStatusText(status, 'ok', `Hiding DMs from ${raw}`);
+  renderDmSection();
+}
+
+async function removeDmContact(name: string): Promise<void> {
+  settings = { ...settings, hiddenDmContacts: settings.hiddenDmContacts.filter((n) => n !== name) };
+  await setSettings(settings);
+  renderDmSection();
+}
+
+// --- YouTube channel quick-add (shown on YouTube) ----------------------------
 
 async function revealChannel(): Promise<void> {
   detected = await detectChannelOnActiveTab();
@@ -250,10 +196,7 @@ async function revealChannel(): Promise<void> {
 }
 
 async function detectChannelOnActiveTab(): Promise<DetectedChannel | null> {
-  const tabs = await browser.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
   const tab = tabs[0];
   if (!tab?.id || !tab.url) return null;
   if (!/^https?:\/\/(www\.)?youtube\.com\//.test(tab.url)) return null;
@@ -311,8 +254,10 @@ function matchesDetected(c: AllowlistChannel): boolean {
 }
 
 function wireChannelButtons(): void {
+  if (channelWired) return;
   $('add-allow').addEventListener('click', () => void toggle('allow'));
   $('add-block').addEventListener('click', () => void toggle('block'));
+  channelWired = true;
 }
 
 async function toggle(kind: Kind): Promise<void> {
@@ -322,8 +267,6 @@ async function toggle(kind: Kind): Promise<void> {
 
   if (isOnList(kind)) {
     settings = removeFromList(settings, kind);
-    const state = getUnlockState(settings.password);
-    if (state.kind === 'editing') settings = withEnjoyStarted(settings);
     await setSettings(settings);
     status.textContent = `Removed from ${labelFor(kind)}`;
     status.className = 'ok';
@@ -346,8 +289,6 @@ async function toggle(kind: Kind): Promise<void> {
   const other: Kind = kind === 'allow' ? 'block' : 'allow';
   settings = removeFromList(settings, other);
   settings = addToList(settings, kind, channel);
-  const state = getUnlockState(settings.password);
-  if (state.kind === 'editing') settings = withEnjoyStarted(settings);
   await setSettings(settings);
   status.textContent = `Added to ${labelFor(kind)}`;
   status.className = 'ok';
@@ -371,11 +312,7 @@ async function buildChannelEntry(): Promise<AllowlistChannel | null> {
   return null;
 }
 
-function addToList(
-  s: Settings,
-  kind: Kind,
-  ch: AllowlistChannel,
-): Settings {
+function addToList(s: Settings, kind: Kind, ch: AllowlistChannel): Settings {
   const current =
     kind === 'allow' ? s.feedFilter.allowlist : s.feedFilter.blocklist;
   if (current.some((c) => (c.id && c.id === ch.id) || c.handle === ch.handle)) {
@@ -412,147 +349,6 @@ function removeFromList(s: Settings, kind: Kind): Settings {
 
 function labelFor(kind: Kind): string {
   return kind === 'allow' ? 'allowlist' : 'blocklist';
-}
-
-// --- Blocked sites (always accessible) ------------------------------------
-
-let siteWired = false;
-
-function renderSiteSection(): void {
-  const ul = $<HTMLUListElement>('site-list');
-  const state = getUnlockState(settings.password);
-  const canRemove = state.kind === 'no-password' || state.kind === 'editing' || state.kind === 'active';
-  ul.replaceChildren(...settings.blockedSites.map((d) => siteRow(d, canRemove)));
-}
-
-function siteRow(domain: string, canRemove: boolean): HTMLLIElement {
-  const li = document.createElement('li');
-  const span = document.createElement('span');
-  span.className = 'domain';
-  span.textContent = domain;
-  li.append(span);
-  if (canRemove) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = 'Remove';
-    btn.addEventListener('click', () => void removeSite(domain));
-    li.append(btn);
-  }
-  return li;
-}
-
-function wireSiteInput(): void {
-  if (siteWired) return;
-  $('site-add').addEventListener('click', () => void addSite());
-  $<HTMLInputElement>('site-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      void addSite();
-    }
-  });
-  siteWired = true;
-}
-
-function normalizeDomain(input: string): string | null {
-  let s = input.trim().toLowerCase();
-  s = s.replace(/^https?:\/\//, '');
-  s = s.replace(/^www\./, '');
-  s = s.replace(/[/?#].*$/, '');
-  s = s.replace(/\.$/, '');
-  if (!s || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(s)) {
-    return null;
-  }
-  return s;
-}
-
-function setStatusText(el: HTMLElement, cls: '' | 'ok' | 'error', msg: string): void {
-  el.textContent = msg;
-  el.className = cls;
-}
-
-async function addSite(): Promise<void> {
-  const input = $<HTMLInputElement>('site-input');
-  const status = $<HTMLElement>('site-status');
-  const domain = normalizeDomain(input.value);
-  if (!domain) {
-    setStatusText(status, 'error', 'Enter a domain like reddit.com');
-    return;
-  }
-  if (settings.blockedSites.includes(domain)) {
-    setStatusText(status, 'error', `${domain} is already blocked`);
-    return;
-  }
-  settings = { ...settings, blockedSites: [...settings.blockedSites, domain] };
-  await setSettings(settings);
-  input.value = '';
-  setStatusText(status, 'ok', `Blocking ${domain}`);
-  renderSiteSection();
-}
-
-async function removeSite(domain: string): Promise<void> {
-  settings = { ...settings, blockedSites: settings.blockedSites.filter((d) => d !== domain) };
-  const state = getUnlockState(settings.password);
-  if (state.kind === 'editing') settings = withEnjoyStarted(settings);
-  await setSettings(settings);
-  renderSiteSection();
-}
-
-// --- Hidden DM contacts (always accessible) ---------------------------------
-
-function renderDmSection(): void {
-  const ul = $<HTMLUListElement>('dm-list');
-  ul.replaceChildren(...settings.hiddenDmContacts.map((name) => dmRow(name)));
-}
-
-function dmRow(name: string): HTMLLIElement {
-  const li = document.createElement('li');
-  const span = document.createElement('span');
-  span.className = 'dm-name';
-  span.textContent = name;
-  li.append(span);
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.textContent = 'Remove';
-  btn.addEventListener('click', () => void removeDmContact(name));
-  li.append(btn);
-  return li;
-}
-
-function wireDmInput(): void {
-  if (dmWired) return;
-  $('dm-add').addEventListener('click', () => void addDmContact());
-  $<HTMLInputElement>('dm-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      void addDmContact();
-    }
-  });
-  dmWired = true;
-}
-
-async function addDmContact(): Promise<void> {
-  const input = $<HTMLInputElement>('dm-input');
-  const status = $<HTMLElement>('dm-status');
-  const raw = input.value.trim().replace(/^@/, '').toLowerCase();
-  if (!raw) {
-    setStatusText(status, 'error', 'Enter a username like @cindy.zkx');
-    return;
-  }
-  if (settings.hiddenDmContacts.includes(raw)) {
-    setStatusText(status, 'error', `${raw} is already hidden`);
-    return;
-  }
-  settings = { ...settings, hiddenDmContacts: [...settings.hiddenDmContacts, raw] };
-  await setSettings(settings);
-  input.value = '';
-  setStatusText(status, 'ok', `Hiding DMs from ${raw}`);
-  renderDmSection();
-}
-
-async function removeDmContact(name: string): Promise<void> {
-  settings = { ...settings, hiddenDmContacts: settings.hiddenDmContacts.filter((n) => n !== name) };
-  await setSettings(settings);
-  renderDmSection();
 }
 
 void init();
