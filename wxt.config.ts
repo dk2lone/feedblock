@@ -10,6 +10,7 @@ export default defineConfig({
     host_permissions: [
       '*://*.youtube.com/*',
       '*://*.instagram.com/*',
+      '*://*.reddit.com/*',
       'https://api.anthropic.com/*',
     ],
     icons: {
