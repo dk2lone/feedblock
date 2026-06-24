@@ -142,6 +142,11 @@ function dmRow(name: string): HTMLLIElement {
   span.className = 'dm-name';
   span.textContent = name;
   li.append(span);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = 'Remove';
+  btn.addEventListener('click', () => void removeDmContact(name));
+  li.append(btn);
   return li;
 }
 
@@ -173,6 +178,12 @@ async function addDmContact(): Promise<void> {
   await setSettings(settings);
   input.value = '';
   setStatusText(status, 'ok', `Hiding DMs from ${raw}`);
+  renderDmSection();
+}
+
+async function removeDmContact(name: string): Promise<void> {
+  settings = { ...settings, hiddenDmContacts: settings.hiddenDmContacts.filter((n) => n !== name) };
+  await setSettings(settings);
   renderDmSection();
 }
 
