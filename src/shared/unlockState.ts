@@ -106,10 +106,9 @@ export function withTimersCleared(settings: Settings): Settings {
   };
 }
 
-// Called when the 30-min enjoy period ends. Restores the guard snapshot
-// so disabling the blocker is at most a 30-minute reprieve.
+// Called when the 30-min enjoy period ends. Always restores to the full
+// blocking state regardless of what settings were before the unlock.
 export function withGuardRestored(settings: Settings): Settings {
-  const guard = settings.password.guard;
   const cleared: PasswordLock = {
     ...settings.password,
     unlockAt: 0,
@@ -117,14 +116,13 @@ export function withGuardRestored(settings: Settings): Settings {
     revertAt: 0,
     guard: null,
   };
-  if (!guard) return { ...settings, password: cleared };
   return {
     ...settings,
-    enabled: guard.enabled,
-    shortFormVideo: { enabled: guard.shortFormVideo.enabled },
-    instagram: { mode: guard.instagram.mode },
-    feedFilter: { ...settings.feedFilter, enabled: guard.feedFilter.enabled },
-    blockedSites: guard.blockedSites ?? settings.blockedSites,
+    enabled: true,
+    shortFormVideo: { enabled: true },
+    instagram: { mode: 'partial' },
+    feedFilter: { ...settings.feedFilter, enabled: true },
+    blockedSites: settings.password.guard?.blockedSites ?? settings.blockedSites,
     password: cleared,
   };
 }
