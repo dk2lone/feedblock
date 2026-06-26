@@ -1,8 +1,8 @@
 # feedblock
 
-Open-source browser extension that blanks the YouTube and Instagram feeds — Shorts, Reels, Explore, and non-educational videos. Local-first — no backend, no telemetry. Optional LLM classifier uses your own Claude API key.
+Open-source browser extension that blanks the YouTube, Instagram, and Reddit feeds, plus any extra sites you add. Local-first — no backend, no telemetry. Optional LLM classifier uses your own Claude API key.
 
-**Status:** v0.0.1 — YouTube Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, Claude classifier, Instagram blocker (Off / Partial / Full modes), hidden Instagram DM contacts, password lock with timed unlock, blocked websites, and per-tab toolbar icon all shipped. Verified in Safari and Chrome.
+**Status:** v0.0.1 — YouTube Shorts blocker, channel allowlist/blocklist, options page, toolbar popup, Claude classifier, Instagram blocker (Off / Partial / Full modes), hidden Instagram DM contacts, Reddit feed blocker, password lock with timed unlock, blocked websites, and per-tab toolbar icon all shipped. Verified in Safari and Chrome.
 
 ## What it does today
 
@@ -25,22 +25,25 @@ Open-source browser extension that blanks the YouTube and Instagram feeds — Sh
 - "checking…" badge on tiles awaiting a verdict
 
 **Toolbar popup:**
-- Click the icon while on a video or channel page → see current channel + one-click **Allow** / **Block** buttons (always accessible, never locked)
-- Mirrors the master toggles (Enabled / Feed filter)
-- Claude toggle is always visible regardless of lock state
+- Always shows a quick **Blocked websites** list with add/remove
+- On YouTube video or channel pages, shows the current channel with one-click **Allow** / **Block** buttons
+- On Instagram pages, shows the **Hidden Instagram DMs** list with add/remove
+- Opens the full **Settings** page from a button in the header
 
 **Password lock (opt-in):**
-- Set a password in the Options page to gate all settings changes
+- Set a password in the Options page to lock the main settings screen behind a timed unlock
 - Passwords hashed locally with PBKDF2-SHA256 (200k iterations, random 16-byte salt) — never leave the extension
 - **3-phase timed unlock:**
   1. Enter password → **15-minute cooldown** with countdown and cancel button
   2. After cooldown, a browser notification fires and a **1-minute editing window** opens — make changes now or the cycle restarts
   3. If changes are made, they persist for a **30-minute enjoy period** (settings stay fully editable), then auto-revert: extension on, feed filter on
-- Channel add/block and Claude settings are **never gated** by the password
+- The **Claude** section stays visible while locked
+- **Blocked websites** stay visible while locked; adding is allowed, removing waits for the edit window
+- Popup quick actions are not gated by the password
 - No recovery flow — if you forget your password, reinstall the extension
 
 **Toolbar icon:**
-- Angry-bird icon switches per tab — happy bird on YouTube/Instagram, sad bird elsewhere
+- Angry-bird icon switches per tab — happy bird on YouTube/Instagram and user-blocked sites, sad bird elsewhere
 
 **Hidden Instagram DMs:**
 - Hide specific Instagram contacts from the DM inbox sidebar — their conversation row disappears
@@ -56,6 +59,14 @@ Open-source browser extension that blanks the YouTube and Instagram feeds — Sh
 - **Off** — don't touch instagram.com
 - **Partial** — blanks the home feed, Explore, and the bare `/reels` index. DMs, profiles, posts, search, and single-reel URLs are left alone
 - **Block completely** — blanks every instagram.com page. Set-and-forget for "I just don't want to be here at all"
+
+**Reddit blocker:**
+- While the extension is enabled, blanks Reddit's home feed plus `/r/popular` and `/r/all`
+- Leaves individual post pages alone
+
+**Blocked websites:**
+- Add any domain (for example `reddit.com`) from the popup or Options page
+- Every page on that domain and its subdomains is blanked while the extension is enabled
 
 ## What's coming
 
@@ -83,7 +94,7 @@ Then in Chrome:
    - Note: `.output` is hidden in Finder. Press **⌘⇧.** in the file picker to reveal dotfolders, or **⌘⇧G** and paste the path.
 4. Click the puzzle-piece icon in the toolbar and **pin** feedblock for easy access
 
-Visit `youtube.com` — Shorts are gone. Open the extension's **Options** page to add channels or enable the classifier.
+Visit `youtube.com` — Shorts are gone. Open the extension's **Options** page to add channels, enable the classifier, or add blocked sites.
 
 ## Install — Safari
 
@@ -136,6 +147,7 @@ npm run compile   # type-check only
 - **Content script** (`src/sites/youtube/`) runs at `document_start`. It injects a `<style>` tag with Shorts selectors and an empty-allowlist nuke, then a MutationObserver+rAF debounce drives the feed filter against tile DOM.
 - **Background script** (`src/background/`) holds the classifier — it manages an in-flight queue, per-video verdict cache in `browser.storage.local`, and the fetch to `api.anthropic.com` (with the `anthropic-dangerous-direct-browser-access` header required for browser-context calls).
 - **Content script verdict cache:** there's a second cache inside the content script itself. YouTube's DOM mutates constantly, and an IPC round-trip per scan caused tile flicker. The local cache short-circuits before any runtime message.
+- **Instagram, Reddit, and generic site blockers** live alongside the YouTube blockers under `src/sites/`.
 - **All YouTube selectors** live in `src/sites/youtube/`. When YouTube changes its DOM, that's where to edit.
 
 ## License
