@@ -19,6 +19,9 @@ let blockHandleSet = new Set<string>();
 let claudeEnabled = false;
 let observer: MutationObserver | null = null;
 let pending = false;
+let pendingRoots = new Set<HTMLElement>();
+let fullScanPending = true;
+let lastSurface: 'home' | 'watch' | null = null;
 // Per-page-load dedupe so we don't fire concurrent classify requests for the
 // same video while one is already in flight.
 const pendingClassifications = new Set<string>();
@@ -42,13 +45,14 @@ export function installFeedFilter(
   claudeEnabled = useClaude;
   injectStyle();
   if (!observer) {
-    observer = new MutationObserver(scheduleScan);
+    observer = new MutationObserver((records) => scheduleScan(records));
     observer.observe(document.documentElement, {
       childList: true,
       subtree: true,
     });
   }
-  scan();
+  fullScanPending = true;
+  scheduleScan();
 }
 
 export function uninstallFeedFilter(): void {
@@ -60,6 +64,8 @@ export function uninstallFeedFilter(): void {
       el.classList.remove(HIDE_CLASS);
       el.classList.remove(CHECK_CLASS);
     });
+  pendingRoots.clear();
+  fullScanPending = true;
   // Observer stays attached; scan() no-ops via `active`. Same pattern as Shorts.
 }
 
@@ -112,7 +118,24 @@ function buildCss(): string {
   return hideMatched + checking + hideUpNext;
 }
 
-function scheduleScan(): void {
+function scheduleScan(records?: MutationRecord[]): void {
+  if (!active) return;
+  if (records) {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        // ponytail: climb a few ancestors so nested mutations still reach the
+        // nearest tile/shelf/guide container; full scans cover anything deeper.
+        let current: HTMLElement | null = node as HTMLElement;
+        for (let i = 0; i < 4 && current && current !== document.documentElement; i++) {
+          pendingRoots.add(current);
+          current = current.parentElement;
+        }
+      }
+    }
+  } else {
+    fullScanPending = true;
+  }
   if (pending) return;
   pending = true;
   requestAnimationFrame(() => {
@@ -123,25 +146,62 @@ function scheduleScan(): void {
 
 function scan(): void {
   if (!active) return;
-  // The left-nav subscription list is present on every page, so always scan it.
-  scanGuideEntries();
-
   const surface = currentSurface();
   document.documentElement.dataset.feedblockPath = surface ?? '';
+  if (surface !== lastSurface) {
+    lastSurface = surface;
+    fullScanPending = true;
+    pendingRoots.clear();
+  }
   if (!surface) return;
 
+  if (fullScanPending || pendingRoots.size === 0) {
+    scanSurface(document, surface);
+    fullScanPending = false;
+    pendingRoots.clear();
+    return;
+  }
+
+  const roots = [...pendingRoots];
+  pendingRoots.clear();
+  for (const root of roots) {
+    scanSurface(root, surface);
+  }
+}
+
+function scanSurface(root: ParentNode, surface: 'home' | 'watch'): void {
+  scanGuideEntries(root);
   if (surface === 'home') {
     // Shelves can wrap single-channel groupings ("From Khan Academy") that we
     // want to keep, but also non-channel content (Playables, Mixes) we don't.
-    const shelves = document.querySelectorAll<HTMLElement>(SHELF_HOME);
-    for (const shelf of shelves) applyShelf(shelf);
+    scanShelves(root);
   }
 
   const selector = surface === 'home' ? TILE_HOME : TILE_UPNEXT;
-  const tiles = document.querySelectorAll<HTMLElement>(selector);
-  for (const tile of tiles) {
-    applyTile(tile);
+  scanTiles(root, selector);
+}
+
+function scanShelves(root: ParentNode): void {
+  scanMatches(root, SHELF_HOME, applyShelf);
+}
+
+function scanGuideEntries(root: ParentNode): void {
+  scanMatches(root, GUIDE_ENTRY, applyGuideEntry);
+}
+
+function scanTiles(root: ParentNode, selector: string): void {
+  scanMatches(root, selector, applyTile);
+}
+
+function scanMatches(
+  root: ParentNode,
+  selector: string,
+  apply: (el: HTMLElement) => void,
+): void {
+  if (root instanceof Element && root.matches(selector)) {
+    apply(root as HTMLElement);
   }
+  root.querySelectorAll<HTMLElement>(selector).forEach(apply);
 }
 
 function applyShelf(shelf: HTMLElement): void {
@@ -171,24 +231,21 @@ function applyShelf(shelf: HTMLElement): void {
   shelf.classList.remove(HIDE_CLASS);
 }
 
-function scanGuideEntries(): void {
-  const entries = document.querySelectorAll<HTMLElement>(GUIDE_ENTRY);
-  for (const entry of entries) {
-    // Skip nav entries (Home, Shorts, Subscriptions link) — they don't have a
-    // /@handle or /channel/ link, only subscription entries do.
-    const channel = extractChannel(entry);
-    if (!channel) {
-      entry.classList.remove(HIDE_CLASS);
-      continue;
-    }
-    const matched =
-      (!!channel.id && idSet.has(channel.id)) ||
-      (!!channel.handle && handleSet.has(channel.handle));
-    if (matched) {
-      entry.classList.remove(HIDE_CLASS);
-    } else {
-      entry.classList.add(HIDE_CLASS);
-    }
+function applyGuideEntry(entry: HTMLElement): void {
+  // Skip nav entries (Home, Shorts, Subscriptions link) — they don't have a
+  // /@handle or /channel/ link, only subscription entries do.
+  const channel = extractChannel(entry);
+  if (!channel) {
+    entry.classList.remove(HIDE_CLASS);
+    return;
+  }
+  const matched =
+    (!!channel.id && idSet.has(channel.id)) ||
+    (!!channel.handle && handleSet.has(channel.handle));
+  if (matched) {
+    entry.classList.remove(HIDE_CLASS);
+  } else {
+    entry.classList.add(HIDE_CLASS);
   }
 }
 

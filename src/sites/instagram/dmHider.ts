@@ -1,8 +1,10 @@
 const STYLE_ID = 'feedblock-ig-dm-hider';
-const SCAN_MS = 400;
 
 let hiddenNames: string[] = [];
-let scanTimer: ReturnType<typeof setInterval> | null = null;
+let observer: MutationObserver | null = null;
+let pending = false;
+let pendingRoots = new Set<HTMLElement>();
+let fullScanPending = true;
 
 export function installDmHider(contacts: string[]): void {
   const names = new Set<string>();
@@ -24,18 +26,26 @@ export function installDmHider(contacts: string[]): void {
   document.querySelectorAll('[data-fb-dmh]').forEach((el) => {
     el.removeAttribute('data-fb-dmh');
   });
-  if (!scanTimer) {
-    scanTimer = setInterval(scan, SCAN_MS);
+  if (!observer) {
+    observer = new MutationObserver((records) => scheduleScan(records));
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+    });
   }
-  scan();
+  fullScanPending = true;
+  scheduleScan();
 }
 
 export function uninstallDmHider(): void {
   hiddenNames = [];
-  if (scanTimer) {
-    clearInterval(scanTimer);
-    scanTimer = null;
+  if (observer) {
+    observer.disconnect();
+    observer = null;
   }
+  pending = false;
+  pendingRoots.clear();
+  fullScanPending = true;
   document.getElementById(STYLE_ID)?.remove();
   document.querySelectorAll('[data-fb-dmh]').forEach((el) => {
     el.removeAttribute('data-fb-dmh');
@@ -69,22 +79,61 @@ function ownText(el: Element): string {
 function scan(): void {
   if (hiddenNames.length === 0) return;
 
+  if (fullScanPending || pendingRoots.size === 0) {
+    scanRoot(document);
+    fullScanPending = false;
+    pendingRoots.clear();
+    return;
+  }
+
+  const roots = [...pendingRoots];
+  pendingRoots.clear();
+  for (const root of roots) {
+    scanRoot(root);
+  }
+}
+
+function scanRoot(root: ParentNode): void {
   // 1. Hide the "Messages" floating chat bubble on any page
-  hideMessagesBubble();
+  hideMessagesBubble(root);
 
   // 2. Hide textbox + call buttons anywhere a hidden contact's name appears
-  hideInputsNearHiddenNames();
+  hideInputsNearHiddenNames(root);
 
   // 3. On /direct pages: hide inbox rows
   if (location.pathname.startsWith('/direct')) {
-    hideInboxRows();
+    hideInboxRows(root);
   }
+}
+
+function scheduleScan(records?: MutationRecord[]): void {
+  if (hiddenNames.length === 0) return;
+  if (records) {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        let current: HTMLElement | null = node as HTMLElement;
+        for (let i = 0; i < 4 && current && current !== document.documentElement; i++) {
+          pendingRoots.add(current);
+          current = current.parentElement;
+        }
+      }
+    }
+  } else {
+    fullScanPending = true;
+  }
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(() => {
+    pending = false;
+    scan();
+  });
 }
 
 // ── 1. The "Messages" floating bubble at bottom-right of home page ──
 
-function hideMessagesBubble(): void {
-  const spans = document.querySelectorAll('span');
+function hideMessagesBubble(root: ParentNode): void {
+  const spans = root.querySelectorAll('span');
   for (let i = 0; i < spans.length; i++) {
     const span = spans[i]!;
     if (span.closest('[data-fb-dmh]')) continue;
@@ -123,8 +172,8 @@ function hideMessagesBubble(): void {
 
 // ── 2. Hide conversation rows in the DM inbox sidebar ──
 
-function hideInboxRows(): void {
-  const spans = document.querySelectorAll('span');
+function hideInboxRows(root: ParentNode): void {
+  const spans = root.querySelectorAll('span');
   for (let i = 0; i < spans.length; i++) {
     const span = spans[i]!;
     if (span.closest('[data-fb-dmh]')) continue;
@@ -147,8 +196,8 @@ function hideInboxRows(): void {
 // ── 3. Hide textbox + call buttons anywhere near a hidden name ──
 // Works on /direct/t/ thread view, mini chat popup, anywhere.
 
-function hideInputsNearHiddenNames(): void {
-  const inputs = document.querySelectorAll(
+function hideInputsNearHiddenNames(root: ParentNode): void {
+  const inputs = root.querySelectorAll(
     '[role="textbox"], [contenteditable="true"], textarea'
   );
   inputs.forEach((input) => {

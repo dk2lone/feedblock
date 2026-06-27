@@ -21,6 +21,10 @@ export function uninstallRedditBlocker(): void {
   active = false;
   document.getElementById(STYLE_ID)?.remove();
   document.documentElement.removeAttribute(NUKE_ATTR);
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
 }
 
 function injectStyle(): void {

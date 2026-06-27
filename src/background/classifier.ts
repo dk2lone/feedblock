@@ -7,6 +7,8 @@ const MAX_CONCURRENT = 4;
 
 let inFlight = 0;
 const waiters: Array<() => void> = [];
+let verdictCache: Record<string, 'pass' | 'block'> | null = null;
+let verdictCacheLoad: Promise<Record<string, 'pass' | 'block'>> | null = null;
 
 async function acquireSlot(): Promise<void> {
   if (inFlight < MAX_CONCURRENT) {
@@ -96,8 +98,7 @@ export async function classify(
 }
 
 async function readCache(videoId: string): Promise<'pass' | 'block' | null> {
-  const stored = await browser.storage.local.get(CACHE_KEY);
-  const cache = (stored[CACHE_KEY] ?? {}) as Record<string, 'pass' | 'block'>;
+  const cache = await loadCache();
   return cache[videoId] ?? null;
 }
 
@@ -105,8 +106,18 @@ async function writeCache(
   videoId: string,
   verdict: 'pass' | 'block',
 ): Promise<void> {
-  const stored = await browser.storage.local.get(CACHE_KEY);
-  const cache = (stored[CACHE_KEY] ?? {}) as Record<string, 'pass' | 'block'>;
+  const cache = await loadCache();
   cache[videoId] = verdict;
   await browser.storage.local.set({ [CACHE_KEY]: cache });
+}
+
+async function loadCache(): Promise<Record<string, 'pass' | 'block'>> {
+  if (verdictCache) return verdictCache;
+  if (!verdictCacheLoad) {
+    verdictCacheLoad = browser.storage.local.get(CACHE_KEY).then((stored) => {
+      verdictCache = (stored[CACHE_KEY] ?? {}) as Record<string, 'pass' | 'block'>;
+      return verdictCache;
+    });
+  }
+  return verdictCacheLoad;
 }

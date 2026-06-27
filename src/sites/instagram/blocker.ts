@@ -24,6 +24,7 @@ export function installInstagramBlocker(mode: ActiveMode = 'partial'): void {
   activeMode = mode;
   injectHidingStyle();
   if (mode === 'full') {
+    stopWatching();
     document.documentElement.setAttribute(NUKE_ATTR, 'all');
     return;
   }
@@ -37,10 +38,12 @@ export function installInstagramBlocker(mode: ActiveMode = 'partial'): void {
     // viewing a single reel and returning). The poll below is the reliable
     // backstop — it picks up every SPA nav regardless of mechanism.
     window.addEventListener('popstate', syncNukeAttr);
+    listenersAttached = true;
+  }
+  if (!pollTimer) {
     pollTimer = setInterval(() => {
       if (location.pathname !== lastPath) syncNukeAttr();
     }, POLL_MS);
-    listenersAttached = true;
   }
 }
 
@@ -48,8 +51,7 @@ export function uninstallInstagramBlocker(): void {
   activeMode = null;
   document.getElementById(STYLE_ID)?.remove();
   document.documentElement.removeAttribute(NUKE_ATTR);
-  // popstate listener and poll stay attached; they no-op via the `activeMode`
-  // check in syncNukeAttr. Re-installing is cheap.
+  stopWatching();
 }
 
 function injectHidingStyle(): void {
@@ -80,4 +82,16 @@ function syncNukeAttr(): void {
   } else {
     document.documentElement.setAttribute(NUKE_ATTR, mode);
   }
+}
+
+function stopWatching(): void {
+  if (listenersAttached) {
+    window.removeEventListener('popstate', syncNukeAttr);
+    listenersAttached = false;
+  }
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  lastPath = '';
 }
