@@ -1,10 +1,8 @@
-# feedblock
+# 🐦 feedblock
 
-Blanks the YouTube, Instagram, and Reddit feeds. Optionally asks Claude, video by video, whether what's left is worth watching.
+Blanks the YouTube, Instagram, and Reddit feeds. Everything else on those sites keeps working.
 
-No backend, no telemetry, no account. Your API key goes to Anthropic and nowhere else.
-
-Chrome, Brave, Edge, Safari. MIT.
+No backend, no telemetry, no account. Chrome, Brave, Edge, Safari. MIT.
 
 ## Demo
 
@@ -18,9 +16,9 @@ _Demo video coming._
 
 ## Why
 
-The blockers I tried only had one setting: off. Kill YouTube and the lectures go with it. feedblock takes the feed and leaves everything else.
+Every blocker I tried had one setting: off. Kill YouTube and the lectures go with it. feedblock takes the feed and leaves the rest.
 
-The classifier is where this got interesting. Allowlists stop scaling somewhere past a few dozen channels, so anything unlisted goes to Claude Haiku, which rules educational or not. YouTube renders roughly 400 tiles per scroll, the API allows 50 requests a minute, and any latency at all shows up as tiles flickering in and out of the DOM in front of you.
+The classifier is the part that got interesting. Allowlists stop scaling somewhere past a few dozen channels, so anything unlisted goes to Claude Haiku, which rules educational or not. YouTube renders roughly 400 tiles per scroll, the API allows 50 requests a minute, and any lag at all shows up as tiles flickering in and out of the page while you watch.
 
 ## What it does
 
@@ -35,19 +33,19 @@ The classifier is where this got interesting. Allowlists stop scaling somewhere 
 | **Hidden DMs** | Chosen Instagram contacts vanish from the inbox. Read-only, no reply box. |
 | **Password lock** | 15-minute cooldown, 1-minute edit window, 30-minute revert. PBKDF2-SHA256, hashed locally, no recovery. |
 
-Fifteen minutes is the whole point of the lock. By the time the settings open, whatever sent you there has usually passed.
+The 15-minute cooldown is the point of the lock. Whatever sent you to the settings page has usually passed by the time it opens.
 
 ## How it works
 
 WXT builds one Manifest V3 source tree for Chrome, Firefox, and Safari.
 
-Content scripts under `src/sites/` run at `document_start`. Each one injects its selectors as a `<style>` tag before first paint so nothing flashes on screen, and a MutationObserver on an rAF debounce keeps pace with SPA navigation and infinite scroll after that.
+Content scripts in `src/sites/` run at `document_start`. Each one injects its selectors as a `<style>` tag before first paint so nothing flashes on screen, then a MutationObserver on an rAF debounce keeps up with SPA navigation and infinite scroll.
 
-The background script owns the classifier. Four requests in flight at most, a per-video verdict cache in `browser.storage.local`, one fetch to `api.anthropic.com`.
+The background script owns the classifier: four requests in flight at most, a per-video verdict cache in `browser.storage.local`, one fetch to `api.anthropic.com`.
 
-The content script keeps a second verdict cache of its own. An IPC round trip per tile during a mutation storm made everything flicker, so the local copy answers first and `runtime.sendMessage` never fires.
+The content script keeps its own copy of that cache. An IPC round trip per tile during a mutation storm made everything flicker, so the local copy answers first and `runtime.sendMessage` mostly never fires.
 
-YouTube selectors live in `src/sites/youtube/`. Edit there when YouTube reshuffles its markup, which it does.
+YouTube selectors live in `src/sites/youtube/`. Edit there when YouTube reshuffles its markup.
 
 ## Install (Chrome, Brave, Edge)
 
