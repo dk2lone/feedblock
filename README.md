@@ -1,8 +1,8 @@
 <h1><img src="public/icon/128.png" width="32" align="top"> feedblock</h1>
 
-Blanks the YouTube, Instagram, and Reddit feeds. Everything else on those sites keeps working. An optional Claude Haiku classifier judges channels that aren't on your lists.
+Blocks non-educational content on YouTube, Instagram, and Reddit. Create a list of allowed creators/content. Selected creators/accounts on those sites keep working. Optional Claude classifier judges channels that are not on your education list. 
 
-No backend, no telemetry, no account. Chrome, Brave, Edge, Safari. MIT.
+via Chrome, Brave, Edge, Safari. MIT.
 
 ## Demo
 
