@@ -4,10 +4,14 @@ Blanks the YouTube, Instagram, and Reddit feeds. Everything else on those sites 
 
 No backend, no telemetry, no account. Chrome, Brave, Edge, Safari. MIT.
 
-<!-- Demo embed: open a new issue on this repo, drag the .mov into the comment box,
+## Demo
+
+<!-- Embed: open a new issue on this repo, drag the .mov into the comment box,
      wait for the upload, copy the https://github.com/user-attachments/... URL it
      generates, paste it bare below, then close the tab without submitting. Bare URL,
      no markdown image syntax, or you get a broken image instead of a player. -->
+
+_Coming soon._
 
 ## Features
 
