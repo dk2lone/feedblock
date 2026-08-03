@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>feedblock</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <strong>feedblock</strong>
+      <button type="button" id="open-options" class="link">Settings →</button>
+    </header>
+
+    <section id="sites-section" class="sites">
+      <h2>Blocked websites</h2>
+      <div class="site-add-row">
+        <input
+          type="text"
+          id="site-input"
+          placeholder="reddit.com"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button type="button" id="site-add">Add</button>
+      </div>
+      <small id="site-status"></small>
+      <ul id="site-list"></ul>
+    </section>
+
+    <section id="dm-section" class="dm-contacts" hidden>
+      <h2>Hidden Instagram DMs</h2>
+      <div class="site-add-row">
+        <input
+          type="text"
+          id="dm-input"
+          placeholder="@cindy.zkx"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button type="button" id="dm-add">Hide</button>
+      </div>
+      <small id="dm-status"></small>
+      <ul id="dm-list"></ul>
+    </section>
+
+    <section id="channel-section" class="channel" hidden>
+      <h2>This channel</h2>
+      <div id="channel-empty" class="empty">
+        Open a video or channel page on YouTube to add it to a list.
+      </div>
+      <div id="channel-detail" hidden>
+        <div class="name" id="channel-name"></div>
+        <div class="handle" id="channel-handle"></div>
+        <div class="actions">
+          <button type="button" id="add-allow">Allow</button>
+          <button type="button" id="add-block">Block</button>
+        </div>
+        <small id="channel-status"></small>
+      </div>
+    </section>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

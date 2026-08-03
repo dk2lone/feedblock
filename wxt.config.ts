@@ -1,0 +1,37 @@
+import { defineConfig } from 'wxt';
+
+export default defineConfig({
+  srcDir: '.',
+  manifest: {
+    name: 'feedblock',
+    description:
+      'Blank the YouTube and Instagram feeds: Shorts, Reels, Explore, and non-educational videos. Local-first, BYO Claude API key.',
+    permissions: ['storage', 'activeTab', 'alarms', 'notifications'],
+    host_permissions: [
+      '*://*.youtube.com/*',
+      '*://*.instagram.com/*',
+      '*://*.reddit.com/*',
+      'https://api.anthropic.com/*',
+    ],
+    icons: {
+      16: 'icon/16.png',
+      32: 'icon/32.png',
+      48: 'icon/48.png',
+      96: 'icon/96.png',
+      128: 'icon/128.png',
+    },
+    action: {
+      default_popup: 'popup.html',
+      default_title: 'feedblock',
+      default_icon: {
+        48: 'icon/48.png',
+        96: 'icon/96.png',
+        128: 'icon/128.png',
+      },
+    },
+    options_ui: {
+      page: 'options.html',
+      open_in_tab: true,
+    },
+  },
+});
