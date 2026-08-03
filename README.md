@@ -1,26 +1,15 @@
 <h1><img src="public/icon/128.png" width="32" align="top"> feedblock</h1>
 
-Blanks the YouTube, Instagram, and Reddit feeds. Everything else on those sites keeps working.
+Blanks the YouTube, Instagram, and Reddit feeds. Everything else on those sites keeps working. An optional Claude Haiku classifier judges channels that aren't on your lists.
 
 No backend, no telemetry, no account. Chrome, Brave, Edge, Safari. MIT.
 
-## Demo
+<!-- Demo embed: open a new issue on this repo, drag the .mov into the comment box,
+     wait for the upload, copy the https://github.com/user-attachments/... URL it
+     generates, paste it bare below, then close the tab without submitting. Bare URL,
+     no markdown image syntax, or you get a broken image instead of a player. -->
 
-<!-- To embed: open a new issue on this repo, drag the .mov into the comment box,
-     wait for the upload to finish, copy the https://github.com/user-attachments/...
-     URL it generates, paste it bare on the line below, then close the issue tab
-     without submitting. Bare URL, no markdown image syntax, or you get a broken
-     image instead of a player. -->
-
-_Demo video coming._
-
-## Why
-
-Every blocker I tried had one setting: off. Kill YouTube and the lectures go with it. feedblock takes the feed and leaves the rest.
-
-The classifier is the part that got interesting. Allowlists stop scaling somewhere past a few dozen channels, so anything unlisted goes to Claude Haiku, which rules educational or not. YouTube renders roughly 400 tiles per scroll, the API allows 50 requests a minute, and any lag at all shows up as tiles flickering in and out of the page while you watch.
-
-## What it does
+## Features
 
 | | |
 |---|---|
@@ -33,53 +22,37 @@ The classifier is the part that got interesting. Allowlists stop scaling somewhe
 | **Hidden DMs** | Chosen Instagram contacts vanish from the inbox. Read-only, no reply box. |
 | **Password lock** | 15-minute cooldown, 1-minute edit window, 30-minute revert. PBKDF2-SHA256, hashed locally, no recovery. |
 
-The 15-minute cooldown is the point of the lock. Whatever sent you to the settings page has usually passed by the time it opens.
-
-## How it works
-
-WXT builds one Manifest V3 source tree for Chrome, Firefox, and Safari.
-
-Content scripts in `src/sites/` run at `document_start`. Each one injects its selectors as a `<style>` tag before first paint so nothing flashes on screen, then a MutationObserver on an rAF debounce keeps up with SPA navigation and infinite scroll.
-
-The background script owns the classifier: four requests in flight at most, a per-video verdict cache in `browser.storage.local`, one fetch to `api.anthropic.com`.
-
-The content script keeps its own copy of that cache. An IPC round trip per tile during a mutation storm made everything flicker, so the local copy answers first and `runtime.sendMessage` mostly never fires.
-
-YouTube selectors live in `src/sites/youtube/`. Edit there when YouTube reshuffles its markup.
-
-## Install (Chrome, Brave, Edge)
+## Install: Chrome, Brave, Edge
 
 ```bash
 git clone https://github.com/dk2lone/feedblock.git
-cd feedblock
-npm install
-npm run build
+cd feedblock && npm install && npm run build
 ```
 
-Go to `chrome://extensions`, turn on Developer mode, click Load unpacked, pick `.output/chrome-mv3/`. Finder hides `.output`, so press **⌘⇧.** in the picker to see it.
+`chrome://extensions` > Developer mode > Load unpacked > `.output/chrome-mv3/`. Finder hides `.output`; press **⌘⇧.** in the picker.
 
-Open youtube.com. Shorts are gone. Everything else lives in Options.
+## Install: Safari
 
-## Install (Safari)
-
-Needs macOS 14+, full Xcode, and a free Apple ID.
+Requires macOS 14+, full Xcode, and an Apple ID.
 
 ```bash
 npm run safari:wrap
 npm run safari:open
 ```
 
-In Xcode, set the signing team on both targets, press ⌘R, then quit the little host app that launches. Over in Safari: Settings, Extensions, enable feedblock. Then Develop, Allow Unsigned Extensions.
+Set the signing team on both targets, press ⌘R, quit the host app. Safari > Settings > Extensions > enable feedblock, then Develop > Allow Unsigned Extensions. Safari drops that last setting on every quit unless you pay for a signed app.
 
-Safari forgets that last setting every time you quit it. Re-enable it on each restart, or pay Apple $99 a year and sign the app properly.
+## Claude classifier
 
-## Classifier
+Get a key at console.anthropic.com, paste it into Options, hit Test, enable the Claude toggle, reload YouTube. Roughly $0.001 per video. Keys stay in `browser.storage.local` and go only to `api.anthropic.com`.
 
-Grab a key from console.anthropic.com. Classification runs about $0.001 a video. Paste the key into Options, hit Test, flip the Claude toggle, reload YouTube. Unlisted tiles carry a "checking..." badge until Haiku answers.
+## Architecture
 
-Keys sit in `browser.storage.local` and go nowhere but Anthropic.
+WXT builds one Manifest V3 tree for Chrome, Firefox, and Safari. Content scripts in `src/sites/` run at `document_start`, inject selectors as a `<style>` tag before first paint, then track SPA navigation with a MutationObserver on an rAF debounce. The background script owns the classifier: four requests in flight at most, verdicts cached in `browser.storage.local`, mirrored in the content script so tile rendering never waits on IPC.
 
-## Develop
+YouTube selectors live in `src/sites/youtube/`. Update them when YouTube changes its markup.
+
+## Development
 
 ```bash
 npm run build      # one-shot build to .output/chrome-mv3/
@@ -87,10 +60,8 @@ npm run dev        # hot-reload dev server (Chrome)
 npm run compile    # type-check only
 ```
 
-Chrome: rebuild, hit the refresh icon on the extension card, reload the tab. Safari: rebuild, press Run in Xcode, since the project points straight at `.output/chrome-mv3/`.
-
-Only re-run `safari:wrap` if the manifest schema changes. Its `--force` flag wipes your signing team.
+Chrome: rebuild, refresh the extension card, reload the tab. Safari: rebuild, press Run in Xcode. Re-run `safari:wrap` only when the manifest schema changes; its `--force` flag wipes your signing team.
 
 ## License
 
-MIT.
+MIT
