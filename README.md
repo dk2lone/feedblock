@@ -19,7 +19,7 @@ _Coming soon._
 |---|---|
 | **Shorts** | Hides the tab, the shelves, the watch sidebar. Redirects `/shorts/<id>` home. Always on. |
 | **Channels** | Allowlist and blocklist by `@handle`. |
-| **Claude classifier** | Haiku 4.5 judges unlisted channels. Bring your own key. |
+| **Claude classifier** | Haiku 4.5 judges unlisted channels. Own API key. |
 | **Instagram** | Off, or feed plus explore plus reels, or the whole site. |
 | **Reddit** | Home, `/r/popular`, `/r/all`. Individual posts still load. |
 | **Any site** | Add a domain. It and its subdomains go blank. |
