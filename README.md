@@ -1,4 +1,4 @@
-# 🐦 feedblock
+<h1><img src="public/icon/128.png" width="32" align="top"> feedblock</h1>
 
 Blanks the YouTube, Instagram, and Reddit feeds. Everything else on those sites keeps working.
 
