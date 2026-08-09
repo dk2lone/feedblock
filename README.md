@@ -1,8 +1,8 @@
 <h1><img src="public/icon/128.png" width="32" align="top"> feedblock</h1>
 
-Blocks non-educational content on YouTube, Instagram, and Reddit. Create a list of allowed creators/content. Selected creators/accounts on those sites keep working. Optional Claude classifier judges channels that are not on your education list. 
+Browser Extension for locking in. Youtube, Instagram, Reddit, Discord, ETC. 
 
-via Chrome, Brave, Edge, Safari. MIT.
+Via Safari or Chrome
 
 ## Demo
 
