@@ -13,6 +13,7 @@ export async function resolveHandle(input: string): Promise<ResolveResult> {
     const resp = await fetch(`https://www.youtube.com/@${handle}`, {
       headers: { 'Accept-Language': 'en-US,en;q=0.9' },
       credentials: 'omit',
+      signal: AbortSignal.timeout(15_000),
     });
     if (resp.status === 404) return { ok: false, reason: 'not-found' };
     if (!resp.ok) return { ok: false, reason: 'network' };

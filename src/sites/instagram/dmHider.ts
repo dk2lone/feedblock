@@ -12,9 +12,11 @@ export function installDmHider(contacts: string[]): void {
     const lower = c.toLowerCase().replace(/^@/, '');
     names.add(lower);
     // Also match just the first part before dots/underscores
-    // so "cindy.zkx" also matches display name "Cindy"
+    // so "cindy.zkx" also matches display name "Cindy". Names are matched as
+    // substrings against every span on the page, so a 1-2 char base like the
+    // "j" in "j.doe" would blank most of the inbox.
     const base = lower.split(/[._]/)[0];
-    if (base) names.add(base);
+    if (base && base.length >= 3) names.add(base);
   }
   hiddenNames = [...names];
   if (hiddenNames.length === 0) {
