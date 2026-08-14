@@ -324,6 +324,14 @@ function applyTile(tile: HTMLElement): void {
       } else {
         tile.classList.add(HIDE_CLASS);
       }
+    })
+    .catch(() => {
+      // Service worker asleep or channel closed mid-flight. Without this the
+      // id stays in pendingClassifications forever, the tile keeps the
+      // "checking…" badge, and an unclassified video stays visible.
+      pendingClassifications.delete(video.id);
+      tile.classList.remove(CHECK_CLASS);
+      tile.classList.add(HIDE_CLASS);
     });
 }
 

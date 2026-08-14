@@ -60,6 +60,9 @@ export async function classify(
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
+      // A hung request holds one of MAX_CONCURRENT slots forever and stalls
+      // every later classify() call.
+      signal: AbortSignal.timeout(15_000),
       headers: {
         'content-type': 'application/json',
         'x-api-key': apiKey,
